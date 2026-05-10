@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight01Icon, ZapIcon, Notification03Icon, SparklesIcon } from 'hugeicons-react'
+import { Logo } from '@/components/logo'
 
 const features = [
   {
@@ -26,11 +27,8 @@ export default function LandingPage() {
   return (
     <div className="flex-1">
       <header className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-        <Link
-          href="/"
-          className="font-display text-lg tracking-tight font-semibold text-ink hover:text-amber transition-colors"
-        >
-          StackPulse
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <Logo size="lg" />
         </Link>
         <nav className="flex items-center gap-6 text-sm">
           <Link href="/sign-in" className="text-dust hover:text-ink transition-colors">

@@ -6,6 +6,7 @@ import { headers } from 'next/headers'
 import { eq, inArray, desc } from 'drizzle-orm'
 import Link from 'next/link'
 import { SparklesIcon, Link01Icon, ZapIcon } from 'hugeicons-react'
+import { Logo } from '@/components/logo'
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -83,11 +84,8 @@ export default async function DashboardPage() {
   return (
     <div className="flex-1">
       <header className="border-b border-line px-6 h-14 flex items-center justify-between">
-        <Link
-          href="/"
-          className="font-display text-sm font-semibold tracking-tight text-ink hover:text-amber transition-colors"
-        >
-          StackPulse
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <Logo size="sm" />
         </Link>
         <div className="flex items-center gap-4">
           <Link href="/onboarding" className="text-xs text-fade hover:text-dust transition-colors">

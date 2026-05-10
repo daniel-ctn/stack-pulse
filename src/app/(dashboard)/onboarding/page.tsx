@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Tick01Icon, ArrowRight01Icon } from 'hugeicons-react'
+import { Logo } from '@/components/logo'
 
 export default async function OnboardingPage() {
   const session = await auth.api.getSession({
@@ -31,11 +32,8 @@ export default async function OnboardingPage() {
   return (
     <div className="flex-1">
       <header className="border-b border-line px-6 h-14 flex items-center justify-between">
-        <Link
-          href="/"
-          className="font-display text-sm font-semibold tracking-tight text-ink hover:text-amber transition-colors"
-        >
-          StackPulse
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <Logo size="sm" />
         </Link>
         <div className="flex items-center gap-4">
           <Link
