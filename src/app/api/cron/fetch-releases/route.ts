@@ -5,9 +5,13 @@ import { fetchLatestReleases } from '@/lib/github'
 import { summarizeRelease } from '@/lib/ai'
 import { eq } from 'drizzle-orm'
 
+export const maxDuration = 60
+
 export async function GET(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get('secret')
-  if (secret !== process.env.CRON_SECRET) {
+  const expected = process.env.CRON_SECRET
+  const bearer = request.headers.get('authorization')
+  const querySecret = request.nextUrl.searchParams.get('secret')
+  if (bearer !== `Bearer ${expected}` && querySecret !== expected) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
