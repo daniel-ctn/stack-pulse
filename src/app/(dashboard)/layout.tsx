@@ -7,9 +7,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     headers: new Headers(await headers()),
   })
 
-  if (!session) {
-    redirect('/sign-in')
-  }
+  if (!session) redirect('/sign-in')
 
   return <>{children}</>
 }
