@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'DevDigest — Stay ahead of the release curve',
+  title: 'StackPulse — Stay ahead of the release curve',
   description:
     'Daily AI-powered summaries of the latest framework and library releases. Follow the tools you use, and never miss a breaking change.',
 }

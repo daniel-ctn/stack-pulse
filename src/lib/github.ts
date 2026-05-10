@@ -14,7 +14,7 @@ export async function fetchLatestReleases(repoUrl: string, perPage = 5): Promise
 
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',
-    'User-Agent': 'DevDigest',
+    'User-Agent': 'StackPulse',
   }
 
   if (process.env.GITHUB_TOKEN) {

@@ -1,18 +1,18 @@
 @import 'tailwindcss';
 
-@theme inline {
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-elevated: var(--surface-elevated);
-  --color-fg: var(--fg);
-  --color-fg-muted: var(--fg-muted);
-  --color-fg-dim: var(--fg-dim);
-  --color-accent: var(--accent);
-  --color-accent-glow: var(--accent-glow);
-  --color-success: var(--success);
-  --color-danger: var(--danger);
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
+@theme {
+  --color-void: #09090b;
+  --color-shade: #111113;
+  --color-lift: #18181b;
+  --color-ink: #f4f4f0;
+  --color-dust: #a1a09a;
+  --color-fade: #63635e;
+  --color-amber: #d4a017;
+  --color-amber-dim: rgba(212, 160, 23, 0.12);
+  --color-emerald: #4ade80;
+  --color-rose: #f87171;
+  --color-line: #232325;
+  --color-ruling: #323235;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-unbounded);
@@ -42,54 +42,42 @@
     }
   }
 
-  @keyframes slide-left {
-    from {
-      opacity: 0;
-      transform: translateX(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes pulse-glow {
+  @keyframes pulse-amber {
     0%,
     100% {
-      box-shadow: 0 0 0 0 var(--accent-glow);
+      box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.2);
     }
     50% {
-      box-shadow: 0 0 24px 4px var(--accent-glow);
+      box-shadow: 0 0 24px 4px rgba(212, 160, 23, 0.12);
     }
   }
 }
 
 :root {
-  --bg: #09090b;
-  --surface: #111113;
-  --surface-elevated: #18181b;
-  --fg: #f4f4f0;
-  --fg-muted: #a1a09a;
-  --fg-dim: #63635e;
-  --accent: #f59e0b;
-  --accent-glow: rgba(245, 158, 11, 0.15);
-  --success: #4ade80;
-  --danger: #f87171;
-  --border: #232325;
-  --border-strong: #323235;
+  --amber: #d4a017;
+  --void: #09090b;
+  --shade: #111113;
+  --lift: #18181b;
+  --ink: #f4f4f0;
+  --dust: #a1a09a;
+  --fade: #63635e;
+  --emerald: #4ade80;
+  --rose: #f87171;
+  --line: #232325;
+  --ruling: #323235;
 }
 
 * {
-  border-color: var(--border);
+  border-color: var(--line);
 }
 
 html {
-  background: var(--bg);
-  color: var(--fg);
+  background: var(--void);
+  color: var(--ink);
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-geist-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -111,10 +99,6 @@ body::before {
 
 .animate-fade-in {
   animation: fade-in 0.4s ease-out both;
-}
-
-.animate-slide-left {
-  animation: slide-left 0.4s ease-out both;
 }
 
 .stagger-1 {
@@ -149,33 +133,33 @@ body::before {
 }
 
 .accent-glow:hover {
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-amber 2s ease-in-out infinite;
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--bg);
+  background: var(--amber);
+  color: var(--void);
 }
 
 input,
 textarea,
 select {
-  background: var(--surface);
-  color: var(--fg);
-  border-color: var(--border);
+  background: var(--shade);
+  color: var(--ink);
+  border-color: var(--line);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  border-color: var(--amber);
+  box-shadow: 0 0 0 1px var(--amber);
 }
 
 pre {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--shade);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 1rem;
   overflow-x: auto;
@@ -184,15 +168,15 @@ pre {
 }
 
 code {
-  font-family: var(--font-mono);
+  font-family: var(--font-geist-mono);
   font-size: 0.8125rem;
 }
 
 a {
-  color: var(--fg);
+  color: var(--ink);
   text-decoration: none;
 }
 
 a:hover {
-  color: var(--accent);
+  color: var(--amber);
 }

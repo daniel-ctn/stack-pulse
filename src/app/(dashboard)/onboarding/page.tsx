@@ -6,7 +6,7 @@ import { eq, and } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Check, ArrowRight } from 'lucide-react'
+import { Tick01Icon, ArrowRight01Icon } from 'hugeicons-react'
 
 export default async function OnboardingPage() {
   const session = await auth.api.getSession({
@@ -15,7 +15,7 @@ export default async function OnboardingPage() {
 
   if (!session) redirect('/sign-in')
 
-  const allTechs = await db.select().from(technologies).orderBy(eq(technologies.name, 'asc'))
+  const allTechs = (await db.select().from(technologies)).sort(() => Math.random() - 0.5)
 
   const userPrefs = await db
     .select({ techId: userTechPreferences.techId })
@@ -30,26 +30,31 @@ export default async function OnboardingPage() {
 
   return (
     <div className="flex-1">
-      <header className="border-b border-border px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="font-display text-sm font-semibold tracking-tight">
-          DevDigest
+      <header className="border-b border-line px-6 h-14 flex items-center justify-between">
+        <Link
+          href="/"
+          className="font-display text-sm font-semibold tracking-tight text-ink hover:text-amber transition-colors"
+        >
+          StackPulse
         </Link>
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs text-fg-dim hover:text-fg-muted transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-fade hover:text-dust transition-colors"
           >
             Skip
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight01Icon className="w-3 h-3" />
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-16">
         <div className="animate-fade-up">
-          <p className="font-mono text-xs text-accent tracking-[0.2em] uppercase mb-3">Step One</p>
-          <h1 className="font-display text-4xl font-bold tracking-tight">Choose Your Stack</h1>
-          <p className="mt-2 text-fg-muted max-w-lg">
+          <p className="font-mono text-xs text-amber tracking-[0.2em] uppercase mb-3">Step One</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight text-ink">
+            Choose Your Stack
+          </h1>
+          <p className="mt-2 text-dust max-w-lg">
             Select the frameworks and libraries you use. We&apos;ll track their releases and deliver
             AI summaries straight to your feed.
           </p>
@@ -66,7 +71,7 @@ export default async function OnboardingPage() {
                 className="animate-fade-up"
                 style={{ animationDelay: `${catIndex * 0.1}s` }}
               >
-                <h2 className="font-mono text-xs text-fg-dim tracking-[0.2em] uppercase mb-4">
+                <h2 className="font-mono text-xs text-fade tracking-[0.2em] uppercase mb-4">
                   {category}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -80,15 +85,15 @@ export default async function OnboardingPage() {
                           type="submit"
                           className={`w-full text-left rounded-xl border p-4 transition-all duration-200 ${
                             isSelected
-                              ? 'border-accent bg-accent/5 ring-1 ring-accent/20'
-                              : 'border-border bg-surface hover:border-border-strong hover:bg-surface-elevated'
+                              ? 'border-amber bg-amber-dim ring-1 ring-amber/20'
+                              : 'border-line bg-shade hover:border-ruling hover:bg-lift'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="font-medium text-sm truncate">{tech.name}</p>
+                              <p className="font-medium text-sm text-ink truncate">{tech.name}</p>
                               {tech.description && (
-                                <p className="text-xs text-fg-dim mt-0.5 line-clamp-2">
+                                <p className="text-xs text-fade mt-0.5 line-clamp-2">
                                   {tech.description}
                                 </p>
                               )}
@@ -96,11 +101,11 @@ export default async function OnboardingPage() {
                             <span
                               className={`shrink-0 mt-0.5 flex items-center justify-center w-5 h-5 rounded-full border transition-colors ${
                                 isSelected
-                                  ? 'bg-accent border-accent text-bg'
-                                  : 'border-border-strong text-transparent'
+                                  ? 'bg-amber border-amber text-void'
+                                  : 'border-ruling text-transparent'
                               }`}
                             >
-                              <Check className="w-3 h-3" />
+                              <Tick01Icon className="w-3 h-3" />
                             </span>
                           </div>
                         </button>
@@ -113,15 +118,15 @@ export default async function OnboardingPage() {
           })}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-border animate-fade-up stagger-3">
+        <div className="mt-16 pt-8 border-t border-line animate-fade-up stagger-3">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-xl bg-fg px-6 py-3 text-sm font-semibold text-bg hover:bg-fg-muted transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber px-6 py-3 text-sm font-semibold text-void hover:bg-amber/80 transition-colors"
           >
             Go to Your Feed
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight01Icon className="w-4 h-4" />
           </Link>
-          <span className="ml-4 text-xs text-fg-dim">
+          <span className="ml-4 text-xs text-fade">
             {selectedIds.size} {selectedIds.size === 1 ? 'technology' : 'technologies'} selected
           </span>
         </div>
