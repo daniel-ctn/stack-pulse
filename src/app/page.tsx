@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { ZapIcon, Notification03Icon, SparklesIcon } from 'hugeicons-react'
 import { Logo } from '@/components/logo'
 import { StackPulseHero } from '@/components/stack-pulse-hero'
@@ -24,7 +27,13 @@ const features = [
   },
 ]
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (session) redirect('/dashboard')
+
   return (
     <div className="flex-1">
       <header className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between relative z-20">

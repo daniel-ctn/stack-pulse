@@ -11,7 +11,9 @@ import {
   SourceCodeIcon,
   ZapIcon,
   ShadcnIcon,
-  NpmIcon,
+  ServerStack01Icon,
+  RocketIcon,
+  Package01Icon,
 } from 'hugeicons-react'
 
 type TechNode = {
@@ -21,14 +23,18 @@ type TechNode = {
 }
 
 const techNodes: TechNode[] = [
-  { name: 'React', icon: ReactIcon, position: { x: '50%', y: '8%' } },
-  { name: 'Next.js', icon: SourceCodeIcon, position: { x: '88%', y: '22%' } },
-  { name: 'Tailwind', icon: TailwindcssIcon, position: { x: '94%', y: '50%' } },
-  { name: 'shadcn/ui', icon: ShadcnIcon, position: { x: '88%', y: '78%' } },
-  { name: 'TypeScript', icon: Typescript03Icon, position: { x: '50%', y: '92%' } },
-  { name: 'Drizzle', icon: Database02Icon, position: { x: '12%', y: '78%' } },
-  { name: 'Prisma', icon: Database02Icon, position: { x: '6%', y: '50%' } },
-  { name: 'Vite', icon: ZapIcon, position: { x: '12%', y: '22%' } },
+  { name: 'React', icon: ReactIcon, position: { x: '50%', y: '6%' } },
+  { name: 'Next.js', icon: SourceCodeIcon, position: { x: '80%', y: '12%' } },
+  { name: 'Tailwind', icon: TailwindcssIcon, position: { x: '94%', y: '30%' } },
+  { name: 'shadcn/ui', icon: ShadcnIcon, position: { x: '94%', y: '50%' } },
+  { name: 'Prisma', icon: Database02Icon, position: { x: '94%', y: '70%' } },
+  { name: 'TypeScript', icon: Typescript03Icon, position: { x: '80%', y: '88%' } },
+  { name: 'Astro', icon: RocketIcon, position: { x: '50%', y: '94%' } },
+  { name: 'Svelte', icon: SourceCodeIcon, position: { x: '20%', y: '88%' } },
+  { name: 'Drizzle', icon: Database02Icon, position: { x: '6%', y: '70%' } },
+  { name: 'Remix', icon: ServerStack01Icon, position: { x: '6%', y: '50%' } },
+  { name: 'Vite', icon: ZapIcon, position: { x: '6%', y: '30%' } },
+  { name: 'Bun', icon: Package01Icon, position: { x: '20%', y: '12%' } },
 ]
 
 function TechNodeButton({
@@ -121,7 +127,7 @@ export function StackPulseHero() {
         </div>
       </div>
 
-      <div className="text-center relative z-10">
+      <div className="text-center relative z-10 py-10 sm:py-12">
         <motion.p
           className="font-mono text-xs text-amber tracking-[0.2em] uppercase mb-4"
           initial={{ opacity: 0, y: 12 }}
