@@ -68,16 +68,16 @@ export default async function DashboardPage() {
     .limit(30)
 
   const borderMap: Record<string, string> = {
-    critical: 'border-amber',
-    high: 'border-amber/60',
-    medium: 'border-sky-500',
+    critical: 'border-rose',
+    high: 'border-amber',
+    medium: 'border-amber/40',
     low: 'border-ruling',
   }
 
   const badgeMap: Record<string, string> = {
-    critical: 'bg-amber/10 text-amber border-amber/20',
-    high: 'bg-amber/5 text-amber border-amber/20',
-    medium: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+    critical: 'bg-rose/10 text-rose border-rose/20',
+    high: 'bg-amber/15 text-amber border-amber/30',
+    medium: 'bg-amber/5 text-amber/70 border-amber/10',
     low: 'bg-dust/10 text-fade border-fade/20',
   }
 
