@@ -15,10 +15,7 @@ const pngBuffers = await Promise.all(
 )
 const ico = await pngToIco(pngBuffers)
 
-const targets = [
-  resolve(root, 'public/favicon.ico'),
-  resolve(root, 'src/app/favicon.ico'),
-]
+const targets = [resolve(root, 'public/favicon.ico'), resolve(root, 'src/app/favicon.ico')]
 for (const t of targets) {
   mkdirSync(dirname(t), { recursive: true })
   writeFileSync(t, ico)

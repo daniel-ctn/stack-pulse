@@ -1,7 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(curl -i -s https://stack-pulse-flame.vercel.app/api/auth/ok)"
-    ]
+    "allow": ["Bash(curl -i -s https://stack-pulse-flame.vercel.app/api/auth/ok)"]
   }
 }

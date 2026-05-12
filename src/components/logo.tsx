@@ -22,9 +22,7 @@ export function Logo({ size = 'md', className = '' }: LogoProps) {
         <rect x="6" y="14" width="16" height="4" rx="2" fill="#a1a09a" />
         <rect x="6" y="20" width="20" height="4" rx="2" fill="#63635e" />
       </svg>
-      <span
-        className={`font-display ${textSize[size]} font-semibold tracking-tight text-ink`}
-      >
+      <span className={`font-display ${textSize[size]} font-semibold tracking-tight text-ink`}>
         StackPulse
       </span>
     </span>

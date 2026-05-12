@@ -28,14 +28,11 @@ export const auth = betterAuth({
         }
       : {}),
   },
-  trustedOrigins: [
-    process.env.BETTER_AUTH_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-  ].filter(Boolean) as string[],
+  trustedOrigins: [process.env.BETTER_AUTH_URL, process.env.NEXT_PUBLIC_APP_URL].filter(
+    Boolean,
+  ) as string[],
   plugins: [
     nextCookies(),
-    ...(process.env.BETTER_AUTH_API_KEY
-      ? [dash({ apiKey: process.env.BETTER_AUTH_API_KEY })]
-      : []),
+    ...(process.env.BETTER_AUTH_API_KEY ? [dash({ apiKey: process.env.BETTER_AUTH_API_KEY })] : []),
   ],
 })

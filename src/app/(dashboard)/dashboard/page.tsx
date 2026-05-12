@@ -10,7 +10,7 @@ import { Logo } from '@/components/logo'
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
-    headers: new Headers(await headers()),
+    headers: await headers(),
   })
 
   if (!session) redirect('/sign-in')
