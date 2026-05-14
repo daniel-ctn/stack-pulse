@@ -24,19 +24,19 @@ const steps = [
     n: '01',
     cmd: 'stack add <tool>',
     title: 'pick your stack',
-    body: 'Select the frameworks, libraries, and tools you actually ship with. Or paste any GitHub repo URL — we’ll follow it.',
+    body: 'Choose from React, Next.js, Tailwind, Drizzle, and 20+ other frameworks — or paste any GitHub repo URL to follow it.',
   },
   {
     n: '02',
     cmd: 'pulse --watch',
     title: 'we watch the releases',
-    body: 'Every new release on GitHub is fetched, parsed, and run through an AI summarizer tuned for changelogs. No noise, no marketing.',
+    body: 'Every new GitHub release for your stack is fetched every 4 hours, parsed, and run through an AI summariser tuned for changelogs. No noise, no marketing copy.',
   },
   {
     n: '03',
     cmd: 'feed --read',
     title: 'read one feed',
-    body: 'A clean, scannable timeline across your entire stack. Breaking changes flagged, code snippets included, sources linked.',
+    body: 'A scannable timeline of release notes across your entire stack. Breaking changes flagged, code snippets included, every entry links to the source release.',
   },
 ]
 
@@ -55,6 +55,35 @@ const trackedStacks = [
   { name: 'solid', icon: Atom01Icon },
 ]
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'StackPulse',
+  url: appUrl,
+  description:
+    'Track GitHub releases for React, Next.js, Tailwind, Drizzle, and any other library. AI-summarised changelogs with breaking changes flagged, new features highlighted, and code snippets included.',
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'Web',
+  browserRequirements: 'Requires modern browser with JavaScript enabled',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  author: {
+    '@type': 'Person',
+    name: 'Daniel',
+    url: 'https://github.com/daniel-ctn',
+  },
+  creator: {
+    '@type': 'Person',
+    name: 'Daniel',
+  },
+  image: `${appUrl}/opengraph-image`,
+}
+
 export default async function LandingPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -64,6 +93,11 @@ export default async function LandingPage() {
 
   return (
     <div className="relative flex-1">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <header className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between relative z-20 border-b border-line/60">
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <Logo size="md" />
@@ -84,19 +118,24 @@ export default async function LandingPage() {
       <main className="relative z-10">
         <StackPulseHero />
 
-        {/* Divider with section anchor */}
+        {/* How it works */}
         <div className="mx-auto max-w-7xl px-6 mt-16 sm:mt-24">
           <div className="flex items-center gap-4">
-            <span className="font-mono text-[11px] text-fade tracking-[0.25em] uppercase">
+            <h2 className="font-mono text-[11px] text-fade tracking-[0.25em] uppercase">
               §&nbsp;how_it_works
-            </span>
+            </h2>
             <div className="h-px flex-1 bg-line" />
             <span className="font-mono text-[11px] text-mute">3 steps</span>
           </div>
         </div>
 
-        {/* Steps */}
-        <section className="mx-auto max-w-7xl px-6 pt-10 pb-24">
+        <section
+          aria-labelledby="how-it-works"
+          className="mx-auto max-w-7xl px-6 pt-10 pb-24"
+        >
+          <p className="sr-only" id="how-it-works">
+            How StackPulse tracks GitHub releases and turns them into AI-summarised digests.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-line border border-line rounded-lg overflow-hidden">
             {steps.map((s) => (
               <div
@@ -125,15 +164,22 @@ export default async function LandingPage() {
         {/* Tracked stacks */}
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex items-center gap-4">
-            <span className="font-mono text-[11px] text-fade tracking-[0.25em] uppercase">
+            <h2 className="font-mono text-[11px] text-fade tracking-[0.25em] uppercase">
               §&nbsp;tracked_stacks
-            </span>
+            </h2>
             <div className="h-px flex-1 bg-line" />
             <span className="font-mono text-[11px] text-mute">+ custom repos</span>
           </div>
         </div>
 
-        <section className="mx-auto max-w-7xl px-6 pt-10 pb-24">
+        <section
+          aria-labelledby="tracked-stacks"
+          className="mx-auto max-w-7xl px-6 pt-10 pb-24"
+        >
+          <p className="sr-only" id="tracked-stacks">
+            Frameworks and libraries StackPulse tracks out of the box, plus support for any custom
+            GitHub repository.
+          </p>
           <div className="frame overflow-hidden">
             <div className="frame-titlebar">
               <span className="win-dots">
@@ -150,7 +196,10 @@ export default async function LandingPage() {
                   key={name}
                   className="bg-shade hover:bg-lift transition-colors px-4 py-5 flex items-center gap-3 group"
                 >
-                  <Icon className="w-5 h-5 text-dust group-hover:text-lime transition-colors" />
+                  <Icon
+                    aria-hidden="true"
+                    className="w-5 h-5 text-dust group-hover:text-lime transition-colors"
+                  />
                   <span className="font-mono text-[13px] text-ink">{name}</span>
                 </div>
               ))}
@@ -173,14 +222,17 @@ export default async function LandingPage() {
             <h2 className="font-mono text-3xl sm:text-5xl font-bold tracking-tight text-ink">
               stop scrolling release notes.
             </h2>
-            <p className="mt-3 text-dust">Start with three clicks. Free forever for individuals.</p>
+            <p className="mt-3 text-dust">
+              Free, open-source, no paywall. Sign in with GitHub and you&apos;re tracking releases in
+              under a minute.
+            </p>
             <Link
               href="/sign-in"
               className="mt-7 inline-flex items-center gap-2 rounded-md bg-lime px-5 py-3 font-mono text-[13px] font-semibold text-void hover:bg-lime/85 transition-colors"
             >
               <span className="text-void/60">$</span>
               <span>./start</span>
-              <span>→</span>
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
         </section>

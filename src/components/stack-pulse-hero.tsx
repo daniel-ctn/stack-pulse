@@ -71,9 +71,9 @@ export function StackPulseHero() {
             transition={{ duration: 0.5, delay: 0.15 }}
             className="mt-7 max-w-md text-[15px] leading-relaxed text-dust"
           >
-            StackPulse watches your stack on GitHub and distills every release into a
-            scannable digest — breaking changes, new APIs, and the code you actually need
-            to read.
+            Track GitHub releases for the libraries you ship with. StackPulse turns every
+            changelog into a scannable AI digest — breaking changes flagged, new APIs
+            highlighted, code snippets included.
           </motion.p>
 
           <motion.div

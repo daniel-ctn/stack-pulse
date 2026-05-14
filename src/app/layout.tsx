@@ -13,41 +13,66 @@ const geistMono = Geist_Mono({
 })
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const title = 'StackPulse — AI-summarised GitHub releases for the libraries you ship with'
 const description =
-  'Daily AI-powered summaries of the latest framework and library releases. Follow the tools you use, and never miss a breaking change.'
+  'Track GitHub releases for React, Next.js, Tailwind, Drizzle, and any other library. StackPulse turns every changelog into a scannable AI digest — breaking changes flagged, new features highlighted, code snippets included.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: 'StackPulse — Every release. One feed.',
+    default: title,
     template: '%s · StackPulse',
   },
   description,
   applicationName: 'StackPulse',
+  generator: 'Next.js',
+  category: 'developer tools',
   keywords: [
     'github releases',
-    'changelog',
-    'dependency updates',
-    'developer tools',
+    'github release tracker',
+    'changelog summary',
+    'ai changelog',
     'release notes',
-    'ai summaries',
+    'dependency updates',
+    'library updates',
+    'framework releases',
+    'breaking changes',
+    'developer tools',
+    'open source release notes',
+    'react release notes',
+    'next.js release notes',
+    'package updates',
   ],
-  authors: [{ name: 'StackPulse' }],
+  authors: [{ name: 'Daniel', url: 'https://github.com/daniel-ctn' }],
+  creator: 'Daniel',
+  publisher: 'StackPulse',
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
-    title: 'StackPulse — Every release. One feed.',
+    title,
     description,
     url: appUrl,
     siteName: 'StackPulse',
     type: 'website',
+    locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'StackPulse — Every release. One feed.',
+    title,
     description,
+    creator: '@daniel_ctn',
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
   },
 }
 
