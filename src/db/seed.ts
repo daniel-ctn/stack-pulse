@@ -1,7 +1,7 @@
+import 'dotenv/config'
 import { db } from './index'
 import { technologies } from './schema'
 import { eq } from 'drizzle-orm'
-import 'dotenv/config'
 
 const seedTechnologies = [
   {

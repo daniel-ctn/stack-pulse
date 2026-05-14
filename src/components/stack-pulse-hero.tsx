@@ -1,189 +1,223 @@
 'use client'
 
-import { useRef, type RefObject } from 'react'
 import { motion } from 'motion/react'
-import { AnimatedBeam } from '@/components/ui/animated-beam'
-import {
-  ReactIcon,
-  TailwindcssIcon,
-  Typescript03Icon,
-  Database02Icon,
-  SourceCodeIcon,
-  ZapIcon,
-  ShadcnIcon,
-  ServerStack01Icon,
-  RocketIcon,
-  Package01Icon,
-} from 'hugeicons-react'
+import Link from 'next/link'
 
-type TechNode = {
-  name: string
-  icon: React.ComponentType<{ className?: string }>
-  position: { x: string; y: string }
-}
-
-const techNodes: TechNode[] = [
-  { name: 'React', icon: ReactIcon, position: { x: '50%', y: '6%' } },
-  { name: 'Next.js', icon: SourceCodeIcon, position: { x: '80%', y: '12%' } },
-  { name: 'Tailwind', icon: TailwindcssIcon, position: { x: '94%', y: '30%' } },
-  { name: 'shadcn/ui', icon: ShadcnIcon, position: { x: '94%', y: '50%' } },
-  { name: 'Prisma', icon: Database02Icon, position: { x: '94%', y: '70%' } },
-  { name: 'TypeScript', icon: Typescript03Icon, position: { x: '80%', y: '88%' } },
-  { name: 'Astro', icon: RocketIcon, position: { x: '50%', y: '94%' } },
-  { name: 'Svelte', icon: SourceCodeIcon, position: { x: '20%', y: '88%' } },
-  { name: 'Drizzle', icon: Database02Icon, position: { x: '6%', y: '70%' } },
-  { name: 'Remix', icon: ServerStack01Icon, position: { x: '6%', y: '50%' } },
-  { name: 'Vite', icon: ZapIcon, position: { x: '6%', y: '30%' } },
-  { name: 'Bun', icon: Package01Icon, position: { x: '20%', y: '12%' } },
+const stackLines: { kw: string; name: string; ver: string }[] = [
+  { kw: 'import', name: 'react', ver: '^19.2.0' },
+  { kw: 'import', name: 'next', ver: '^16.2.6' },
+  { kw: 'import', name: 'tailwindcss', ver: '^4.0.0' },
+  { kw: 'import', name: 'drizzle-orm', ver: '^0.45.2' },
+  { kw: 'import', name: 'better-auth', ver: '^1.6.10' },
+  { kw: 'import', name: 'motion', ver: '^12.38.0' },
 ]
 
-function TechNodeButton({
-  node,
-  nodeRef,
-}: {
-  node: TechNode
-  nodeRef: RefObject<HTMLDivElement | null>
-}) {
-  const Icon = node.icon
-  return (
-    <div
-      ref={nodeRef}
-      className="absolute -translate-x-1/2 -translate-y-1/2"
-      style={{ left: node.position.x, top: node.position.y }}
-    >
-      <motion.div
-        className="flex items-center justify-center w-12 h-12 rounded-full bg-shade border border-ruling shadow-lg"
-        animate={{
-          boxShadow: [
-            '0 0 0 0 rgba(212,160,23,0)',
-            '0 0 14px 3px rgba(212,160,23,0.12)',
-            '0 0 0 0 rgba(212,160,23,0)',
-          ],
-        }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        <Icon className="w-5 h-5 text-dust" />
-      </motion.div>
-      <p className="mt-1.5 text-[10px] font-medium text-fade text-center leading-tight">
-        {node.name}
-      </p>
-    </div>
-  )
+const feedItems = [
+  { tag: 'react', ver: 'v19.2.0', label: 'NEW', tone: 'emerald' as const, msg: 'useEffectEvent ships stable' },
+  { tag: 'next', ver: 'v16.2.6', label: 'BREAKING', tone: 'rose' as const, msg: 'fetch cache defaults flipped' },
+  { tag: 'tailwind', ver: 'v4.0.0', label: 'MAJOR', tone: 'amber' as const, msg: 'CSS-first config engine' },
+]
+
+const toneClasses: Record<'emerald' | 'rose' | 'amber', string> = {
+  emerald: 'text-emerald border-emerald/30 bg-emerald/10',
+  rose: 'text-rose border-rose/30 bg-rose/10',
+  amber: 'text-amber border-amber/30 bg-amber/10',
 }
 
 export function StackPulseHero() {
-  const containerRef = useRef<HTMLDivElement>(null!)
-  const hubRef = useRef<HTMLDivElement>(null!)
-  const nodeRefs = useRef<Array<RefObject<HTMLDivElement | null>>>(
-    techNodes.map(() => ({ current: null })),
-  )
-
   return (
-    <div className="relative mx-auto max-w-7xl px-6 pt-16 pb-6 sm:pt-24 sm:pb-8">
-      <div ref={containerRef} className="relative h-[340px] sm:h-[420px] lg:h-[480px]">
-        {techNodes.map((node, i) => (
-          <AnimatedBeam
-            key={node.name}
-            containerRef={containerRef}
-            fromRef={nodeRefs.current[i]}
-            toRef={hubRef}
-            curvature={-40 + i * 10}
-            duration={4 + i * 0.5}
-            delay={i * 0.3}
-            pathColor="#323235"
-            pathWidth={1.5}
-            pathOpacity={0.4}
-            gradientStartColor="#d4a017"
-            gradientStopColor="#d4a017"
-          />
-        ))}
+    <section className="relative mx-auto max-w-7xl px-6 pt-14 pb-10 sm:pt-20">
+      {/* Status bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center gap-2.5 font-mono text-[11px] text-fade"
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime opacity-60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-lime" />
+          </span>
+          <span className="text-lime">live</span>
+        </span>
+        <span className="text-mute">·</span>
+        <span>watching 142 repos</span>
+        <span className="text-mute">·</span>
+        <span>summarizing in real time</span>
+      </motion.div>
 
-        {techNodes.map((node, i) => (
-          <TechNodeButton key={node.name} node={node} nodeRef={nodeRefs.current[i]} />
-        ))}
-
-        <div
-          ref={hubRef}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
-        >
-          <motion.div
-            className="flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-amber text-void shadow-[0_0_60px_rgba(212,160,23,0.3)]"
-            animate={{
-              scale: [1, 1.04, 1],
-              boxShadow: [
-                '0 0 40px rgba(212,160,23,0.3)',
-                '0 0 64px rgba(212,160,23,0.45)',
-                '0 0 40px rgba(212,160,23,0.3)',
-              ],
-            }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+      <div className="mt-7 grid gap-12 lg:grid-cols-[1.05fr_1fr] lg:items-center">
+        {/* Left: Headline */}
+        <div className="relative">
+          <motion.h1
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="font-mono font-bold tracking-tight text-ink text-[44px] leading-[1.02] sm:text-[60px] lg:text-[68px]"
           >
-            <svg width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-              <rect x="6" y="8" width="20" height="4" rx="2" fill="#09090b" />
-              <rect x="6" y="14" width="16" height="4" rx="2" fill="#09090b" opacity="0.7" />
-              <rect x="6" y="20" width="12" height="4" rx="2" fill="#09090b" opacity="0.4" />
-            </svg>
+            <span className="text-fade">{'/* '}</span>
+            <br className="hidden sm:block" />
+            Every release.
+            <br />
+            <span className="text-lime">One feed.</span>
+            <br />
+            <span className="text-fade">{' */'}</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="mt-7 max-w-md text-[15px] leading-relaxed text-dust"
+          >
+            StackPulse watches your stack on GitHub and distills every release into a
+            scannable digest — breaking changes, new APIs, and the code you actually need
+            to read.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            className="mt-8 flex flex-wrap items-center gap-3 font-mono text-[13px]"
+          >
+            <Link
+              href="/sign-up"
+              className="group inline-flex items-center gap-2 rounded-md bg-lime px-4 py-2.5 font-semibold text-void hover:bg-lime/85 transition-colors"
+            >
+              <span className="text-void/60">$</span>
+              <span>start tracking</span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity">↵</span>
+            </Link>
+            <Link
+              href="/sign-in"
+              className="inline-flex items-center gap-2 rounded-md border border-ruling bg-shade px-4 py-2.5 font-medium text-ink hover:border-edge hover:bg-lift transition-colors"
+            >
+              <span className="text-fade">--sign-in</span>
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-1.5 font-mono text-[11px] text-fade"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-emerald">✓</span> no email spam
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-emerald">✓</span> ai-distilled
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-emerald">✓</span> free to start
+            </span>
           </motion.div>
         </div>
-      </div>
 
-      <div className="text-center relative z-10 py-10 sm:py-12">
-        <motion.p
-          className="font-mono text-xs text-amber tracking-[0.2em] uppercase mb-4"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          Connect your entire stack
-        </motion.p>
-        <motion.h1
-          className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight text-ink"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-        >
-          Every release.
-          <br />
-          <span className="text-amber">One feed.</span>
-        </motion.h1>
-        <motion.p
-          className="mt-5 max-w-lg mx-auto text-base sm:text-lg text-dust leading-relaxed"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.5 }}
-        >
-          StackPulse watches your frameworks on GitHub and turns release notes into AI-powered daily
-          digests — breaking changes, new features, and code you can use.
-        </motion.p>
+        {/* Right: Editor + feed window */}
         <motion.div
-          className="mt-8 flex items-center justify-center gap-4"
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.5 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="relative"
         >
-          <a
-            href="/sign-up"
-            className="inline-flex items-center gap-2 rounded-xl bg-amber px-6 py-3 text-sm font-semibold text-void hover:bg-amber/80 transition-colors"
+          {/* Editor window */}
+          <div className="frame shadow-[0_30px_60px_-30px_rgba(0,0,0,0.6)] relative overflow-hidden">
+            <div className="frame-titlebar">
+              <span className="win-dots">
+                <span style={{ background: '#fb7185' }} />
+                <span style={{ background: '#fbbf24' }} />
+                <span style={{ background: '#34d399' }} />
+              </span>
+              <span className="text-dust">~/stack.config.ts</span>
+              <span className="ml-auto text-mute">tsx</span>
+            </div>
+            <div className="px-4 py-4 font-mono text-[13px] leading-[1.7]">
+              <div className="flex">
+                <div className="gutter w-7 pr-3 shrink-0">
+                  {Array.from({ length: stackLines.length + 4 }).map((_, i) => (
+                    <div key={i}>{i + 1}</div>
+                  ))}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-fade">{'// the tools you actually ship with'}</div>
+                  <div>
+                    <span className="text-magenta">export const</span>{' '}
+                    <span className="text-cyan">stack</span>
+                    <span className="text-dust"> = </span>
+                    <span className="text-dust">{'['}</span>
+                  </div>
+                  {stackLines.map((line, i) => (
+                    <motion.div
+                      key={line.name}
+                      initial={{ opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + i * 0.08, duration: 0.3 }}
+                      className="pl-4"
+                    >
+                      <span className="text-violet">{line.kw}</span>{' '}
+                      <span className="text-cyan">&quot;{line.name}&quot;</span>
+                      <span className="text-dust">@</span>
+                      <span className="text-amber">{line.ver}</span>
+                      <span className="text-dust">,</span>
+                    </motion.div>
+                  ))}
+                  <div>
+                    <span className="text-dust">{']'}</span>
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 1.2 }}
+                      className="caret"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Floating feed card */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.9 }}
+            className="absolute -bottom-6 -left-4 right-6 sm:left-auto sm:-right-6 sm:bottom-6 sm:max-w-[280px]"
           >
-            Start Reading Free
-            <svg
-              className="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </a>
-          <a
-            href="/sign-in"
-            className="inline-flex items-center gap-2 rounded-xl border border-ruling px-6 py-3 text-sm font-semibold text-ink hover:bg-shade transition-colors"
-          >
-            Sign In
-          </a>
+            <div className="frame shadow-[0_30px_60px_-30px_rgba(0,0,0,0.7)]">
+              <div className="frame-titlebar">
+                <span className="text-lime">●</span>
+                <span className="text-dust">today&apos;s digest</span>
+                <span className="ml-auto text-mute">{feedItems.length} new</span>
+              </div>
+              <div className="p-3 space-y-2.5">
+                {feedItems.map((it, i) => (
+                  <motion.div
+                    key={it.tag}
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.1 + i * 0.12 }}
+                    className="flex items-start gap-2 font-mono text-[11px]"
+                  >
+                    <span className={`inline-flex shrink-0 items-center rounded-[3px] border px-1.5 py-0.5 text-[9px] font-semibold tracking-wider uppercase ${toneClasses[it.tone]}`}>
+                      {it.label}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-ink truncate">
+                        <span className="text-cyan">{it.tag}</span>
+                        <span className="text-dust">@</span>
+                        <span className="text-amber">{it.ver}</span>
+                      </div>
+                      <div className="text-fade truncate">{it.msg}</div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
-    </div>
+    </section>
   )
 }

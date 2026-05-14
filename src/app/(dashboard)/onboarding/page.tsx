@@ -24,34 +24,45 @@ export default async function OnboardingPage() {
 
   return (
     <div className="flex-1">
-      <header className="border-b border-line px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="hover:opacity-80 transition-opacity">
-          <Logo size="sm" />
-        </Link>
-        <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-30 border-b border-line bg-void/80 backdrop-blur">
+        <div className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between">
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            <Logo size="sm" />
+          </Link>
+          <div className="hidden sm:flex items-center gap-2 font-mono text-[11px] text-fade">
+            <span className="text-mute">~/</span>
+            <span className="text-dust">onboarding</span>
+            <span className="text-mute">/</span>
+            <span className="text-lime">configure</span>
+          </div>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs text-fade hover:text-dust transition-colors"
+            className="inline-flex items-center gap-1.5 font-mono text-[11px] text-fade hover:text-dust transition-colors"
           >
-            Skip
+            skip
             <ArrowRight01Icon className="w-3 h-3" />
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-16">
+      <main className="mx-auto max-w-5xl px-6 py-12 relative z-10">
         <div className="animate-fade-up">
-          <p className="font-mono text-xs text-amber tracking-[0.2em] uppercase mb-3">Step One</p>
-          <h1 className="font-display text-4xl font-bold tracking-tight text-ink">
-            Choose Your Stack
+          <div className="flex items-center gap-3 font-mono text-[11px] text-fade tracking-[0.2em] uppercase">
+            <span className="text-lime">§</span>
+            <span>step 01</span>
+            <span className="text-mute">/</span>
+            <span>configure</span>
+          </div>
+          <h1 className="mt-3 font-mono text-3xl sm:text-[40px] font-bold tracking-tight text-ink lowercase">
+            choose your stack<span className="text-lime">.</span>
           </h1>
-          <p className="mt-2 text-dust max-w-lg">
-            Select the frameworks and libraries you use. We&apos;ll track their releases and deliver
-            AI summaries straight to your feed.
+          <p className="mt-2 text-dust text-[14px] max-w-xl">
+            Select the frameworks and libraries you ship with. We&apos;ll watch their GitHub
+            releases and turn each one into a daily, scannable digest.
           </p>
         </div>
 
-        <div className="mt-12">
+        <div className="mt-10">
           <TechSelector
             userId={session.user.id}
             allTechs={allTechs}

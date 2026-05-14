@@ -3,31 +3,45 @@
 @import 'shadcn/tailwind.css';
 
 @theme {
-  --color-void: #09090b;
-  --color-shade: #111113;
-  --color-lift: #18181b;
-  --color-ink: #f4f4f0;
-  --color-dust: #a1a09a;
-  --color-fade: #63635e;
-  --color-amber: #d4a017;
-  --color-amber-dim: rgba(212, 160, 23, 0.12);
-  --color-emerald: #4ade80;
-  --color-rose: #f87171;
-  --color-line: #232325;
-  --color-ruling: #323235;
+  --color-void: #08080a;
+  --color-shade: #0d0d10;
+  --color-lift: #131318;
+  --color-panel: #16161c;
+  --color-ink: #e8e8ec;
+  --color-dust: #9b9ba1;
+  --color-fade: #5a5a62;
+  --color-mute: #3a3a42;
+  --color-line: #1c1c22;
+  --color-ruling: #26262e;
+  --color-edge: #34343d;
+
+  /* Syntax-style semantic accents */
+  --color-lime: #a3e635;
+  --color-lime-dim: rgba(163, 230, 53, 0.12);
+  --color-cyan: #67e8f9;
+  --color-violet: #c084fc;
+  --color-magenta: #f472b6;
+  --color-amber: #fbbf24;
+  --color-emerald: #34d399;
+  --color-rose: #fb7185;
+
+  /* Legacy aliases (kept so untouched files don't break) */
+  --color-amber-dim: rgba(251, 191, 36, 0.12);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-unbounded);
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --font-display: var(--font-geist-mono);
+
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
 
   @keyframes fade-up {
     from {
       opacity: 0;
-      transform: translateY(16px);
+      transform: translateY(8px);
     }
     to {
       opacity: 1;
@@ -44,61 +58,89 @@
     }
   }
 
-  @keyframes pulse-amber {
+  @keyframes blink {
     0%,
-    100% {
-      box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.2);
+    49% {
+      opacity: 1;
     }
-    50% {
-      box-shadow: 0 0 24px 4px rgba(212, 160, 23, 0.12);
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes scan {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes type {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
     }
   }
 }
 
 :root {
-  --amber: #d4a017;
-  --void: #09090b;
-  --shade: #111113;
-  --lift: #18181b;
-  --ink: #f4f4f0;
-  --dust: #a1a09a;
-  --fade: #63635e;
-  --emerald: #4ade80;
-  --rose: #f87171;
-  --line: #232325;
-  --ruling: #323235;
-  --background: #09090b;
-  --foreground: #f4f4f0;
-  --card: #111113;
-  --card-foreground: #f4f4f0;
-  --popover: #111113;
-  --popover-foreground: #f4f4f0;
-  --primary: #d4a017;
-  --primary-foreground: #09090b;
-  --secondary: #18181b;
-  --secondary-foreground: #f4f4f0;
-  --muted: #111113;
-  --muted-foreground: #a1a09a;
-  --accent: #111113;
-  --accent-foreground: #f4f4f0;
-  --destructive: #f87171;
-  --border: #232325;
-  --input: #232325;
-  --ring: #323235;
-  --chart-1: #d4a017;
-  --chart-2: #4ade80;
-  --chart-3: #a1a09a;
-  --chart-4: #63635e;
-  --chart-5: #f4f4f0;
-  --radius: 0.625rem;
-  --sidebar: #09090b;
-  --sidebar-foreground: #f4f4f0;
-  --sidebar-primary: #d4a017;
-  --sidebar-primary-foreground: #09090b;
-  --sidebar-accent: #111113;
-  --sidebar-accent-foreground: #f4f4f0;
-  --sidebar-border: #232325;
-  --sidebar-ring: #323235;
+  --void: #08080a;
+  --shade: #0d0d10;
+  --lift: #131318;
+  --panel: #16161c;
+  --ink: #e8e8ec;
+  --dust: #9b9ba1;
+  --fade: #5a5a62;
+  --mute: #3a3a42;
+  --line: #1c1c22;
+  --ruling: #26262e;
+  --edge: #34343d;
+
+  --lime: #a3e635;
+  --cyan: #67e8f9;
+  --violet: #c084fc;
+  --magenta: #f472b6;
+  --amber: #fbbf24;
+  --emerald: #34d399;
+  --rose: #fb7185;
+
+  --background: #08080a;
+  --foreground: #e8e8ec;
+  --card: #0d0d10;
+  --card-foreground: #e8e8ec;
+  --popover: #131318;
+  --popover-foreground: #e8e8ec;
+  --primary: #a3e635;
+  --primary-foreground: #08080a;
+  --secondary: #131318;
+  --secondary-foreground: #e8e8ec;
+  --muted: #0d0d10;
+  --muted-foreground: #9b9ba1;
+  --accent: #131318;
+  --accent-foreground: #e8e8ec;
+  --destructive: #fb7185;
+  --border: #1c1c22;
+  --input: #1c1c22;
+  --ring: #26262e;
+  --chart-1: #a3e635;
+  --chart-2: #67e8f9;
+  --chart-3: #c084fc;
+  --chart-4: #fbbf24;
+  --chart-5: #fb7185;
+  --radius: 0.375rem;
+  --sidebar: #08080a;
+  --sidebar-foreground: #e8e8ec;
+  --sidebar-primary: #a3e635;
+  --sidebar-primary-foreground: #08080a;
+  --sidebar-accent: #0d0d10;
+  --sidebar-accent-foreground: #e8e8ec;
+  --sidebar-border: #1c1c22;
+  --sidebar-ring: #26262e;
 }
 
 html {
@@ -112,65 +154,133 @@ body {
   font-family: var(--font-geist-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'ss01', 'ss03', 'cv11';
 }
 
+/* Dotted grid backdrop — coding workspace feel */
 body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: 0 0;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+}
+
+/* Subtle noise on top */
+body::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 256px 256px;
+  mix-blend-mode: overlay;
 }
 
 .animate-fade-up {
-  animation: fade-up 0.6s ease-out both;
+  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-fade-in {
   animation: fade-in 0.4s ease-out both;
 }
 
-.stagger-1 {
-  animation-delay: 0.05s;
-}
-.stagger-2 {
-  animation-delay: 0.1s;
-}
-.stagger-3 {
-  animation-delay: 0.15s;
-}
-.stagger-4 {
-  animation-delay: 0.2s;
-}
-.stagger-5 {
-  animation-delay: 0.25s;
-}
-.stagger-6 {
-  animation-delay: 0.3s;
-}
-.stagger-7 {
-  animation-delay: 0.35s;
-}
-.stagger-8 {
-  animation-delay: 0.4s;
-}
-.stagger-9 {
-  animation-delay: 0.45s;
-}
-.stagger-10 {
-  animation-delay: 0.5s;
+.animate-blink {
+  animation: blink 1.1s steps(1) infinite;
 }
 
-.accent-glow:hover {
-  animation: pulse-amber 2s ease-in-out infinite;
+.stagger-1 {
+  animation-delay: 0.04s;
+}
+.stagger-2 {
+  animation-delay: 0.08s;
+}
+.stagger-3 {
+  animation-delay: 0.12s;
+}
+.stagger-4 {
+  animation-delay: 0.16s;
+}
+.stagger-5 {
+  animation-delay: 0.2s;
+}
+.stagger-6 {
+  animation-delay: 0.24s;
+}
+.stagger-7 {
+  animation-delay: 0.28s;
+}
+.stagger-8 {
+  animation-delay: 0.32s;
+}
+.stagger-9 {
+  animation-delay: 0.36s;
+}
+.stagger-10 {
+  animation-delay: 0.4s;
 }
 
 ::selection {
-  background: var(--amber);
+  background: var(--lime);
   color: var(--void);
+}
+
+/* Caret blink helper */
+.caret::after {
+  content: '▍';
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--lime);
+  animation: blink 1.1s steps(1) infinite;
+  font-weight: 400;
+}
+
+/* Window chrome dots (traffic-light) */
+.win-dots {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.win-dots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  display: block;
+}
+
+/* Code-style frame */
+.frame {
+  background: var(--shade);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.frame-titlebar {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 14px;
+  font-family: var(--font-geist-mono);
+  font-size: 11px;
+  color: var(--fade);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* Faux line numbers gutter */
+.gutter {
+  font-family: var(--font-geist-mono);
+  color: var(--mute);
+  user-select: none;
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 input,
@@ -179,14 +289,15 @@ select {
   background: var(--shade);
   color: var(--ink);
   border-color: var(--line);
+  font-family: var(--font-geist-mono);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: var(--amber);
-  box-shadow: 0 0 0 1px var(--amber);
+  border-color: var(--lime);
+  box-shadow: 0 0 0 1px var(--lime);
 }
 
 pre {
@@ -196,7 +307,7 @@ pre {
   padding: 1rem;
   overflow-x: auto;
   font-size: 0.8125rem;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 code {
@@ -210,11 +321,11 @@ a {
 }
 
 a:hover {
-  color: var(--amber);
+  color: var(--lime);
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-mono);
   --font-sans: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

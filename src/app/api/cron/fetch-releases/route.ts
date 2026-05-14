@@ -3,7 +3,7 @@ import { db } from '@/db'
 import { technologies, releaseUpdates } from '@/db/schema'
 import { fetchLatestReleases } from '@/lib/github'
 import { summarizeRelease } from '@/lib/ai'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 export const maxDuration = 60
 
@@ -20,13 +20,18 @@ export async function GET(request: NextRequest) {
 
   for (const tech of allTechs) {
     try {
-      const releases = await fetchLatestReleases(tech.githubRepoUrl, 3)
+      const releases = await fetchLatestReleases(tech.githubRepoUrl, 20)
 
       for (const release of releases) {
         const existing = await db
           .select({ id: releaseUpdates.id })
           .from(releaseUpdates)
-          .where(eq(releaseUpdates.version, release.tag_name))
+          .where(
+            and(
+              eq(releaseUpdates.techId, tech.id),
+              eq(releaseUpdates.version, release.tag_name),
+            ),
+          )
           .limit(1)
 
         if (existing.length > 0) continue

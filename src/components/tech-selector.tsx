@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Tick01Icon, ArrowRight01Icon, PlusSignIcon } from 'hugeicons-react'
+import { Tick01Icon, ArrowRight01Icon, PlusSignIcon, Search01Icon } from 'hugeicons-react'
 import { saveTechPreferences, addCustomTech } from '@/lib/actions'
 
 type Tech = {
@@ -28,6 +28,7 @@ export function TechSelector({
   const [customName, setCustomName] = useState('')
   const [customUrl, setCustomUrl] = useState('')
   const [addError, setAddError] = useState('')
+  const [query, setQuery] = useState('')
   const router = useRouter()
 
   const toggle = (id: string) => {
@@ -49,15 +50,15 @@ export function TechSelector({
   const handleAddCustom = async () => {
     setAddError('')
     if (!customName.trim()) {
-      setAddError('Name is required')
+      setAddError('name is required')
       return
     }
     if (!customUrl.trim()) {
-      setAddError('GitHub URL is required')
+      setAddError('github url is required')
       return
     }
     if (!customUrl.trim().includes('github.com')) {
-      setAddError('Enter a valid GitHub repo URL')
+      setAddError('enter a valid github repo url')
       return
     }
 
@@ -68,112 +69,267 @@ export function TechSelector({
     setAdding(false)
   }
 
-  const categories = Array.from(
-    new Set(allTechs.map((t) => t.category).filter(Boolean)),
-  ) as string[]
+  const selectedTechs = useMemo(
+    () => allTechs.filter((t) => selectedIds.has(t.id)),
+    [allTechs, selectedIds],
+  )
+
+  const categories = useMemo(
+    () => Array.from(new Set(allTechs.map((t) => t.category).filter(Boolean))) as string[],
+    [allTechs],
+  )
+
+  const filteredTechs = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return allTechs
+    return allTechs.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.slug.toLowerCase().includes(q) ||
+        (t.description?.toLowerCase().includes(q) ?? false),
+    )
+  }, [allTechs, query])
 
   return (
-    <>
-      <div className="space-y-16">
-        {categories.map((category, catIndex) => {
-          const catTechs = allTechs.filter((t) => t.category === category)
-          if (catTechs.length === 0) return null
-
-          return (
-            <section
-              key={category}
-              className="animate-fade-up"
-              style={{ animationDelay: `${catIndex * 0.1}s` }}
-            >
-              <h2 className="font-mono text-xs text-fade tracking-[0.2em] uppercase mb-4">
-                {category}
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {catTechs.map((tech) => {
-                  const isSelected = selectedIds.has(tech.id)
-                  return (
-                    <button
-                      key={tech.id}
-                      onClick={() => toggle(tech.id)}
-                      className={`w-full text-left rounded-xl border p-4 transition-all duration-200 ${
-                        isSelected
-                          ? 'border-amber bg-amber-dim ring-1 ring-amber/20'
-                          : 'border-line bg-shade hover:border-ruling hover:bg-lift'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm text-ink truncate">{tech.name}</p>
-                          {tech.description && (
-                            <p className="text-xs text-fade mt-0.5 line-clamp-2">
-                              {tech.description}
-                            </p>
-                          )}
-                        </div>
-                        <span
-                          className={`shrink-0 mt-0.5 flex items-center justify-center w-5 h-5 rounded-full border transition-colors ${
-                            isSelected
-                              ? 'bg-amber border-amber text-void'
-                              : 'border-ruling text-transparent'
-                          }`}
-                        >
-                          <Tick01Icon className="w-3 h-3" />
-                        </span>
-                      </div>
-                    </button>
-                  )
-                })}
+    <div className="space-y-10">
+      {/* Live config preview */}
+      <div className="frame overflow-hidden">
+        <div className="frame-titlebar">
+          <span className="win-dots">
+            <span style={{ background: '#fb7185' }} />
+            <span style={{ background: '#fbbf24' }} />
+            <span style={{ background: '#34d399' }} />
+          </span>
+          <span className="text-dust">~/stack.config.ts</span>
+          <span className="ml-auto text-mute">
+            {selectedTechs.length} {selectedTechs.length === 1 ? 'item' : 'items'}
+          </span>
+        </div>
+        <div className="px-4 py-4 font-mono text-[13px] leading-[1.7]">
+          <div className="flex">
+            <div className="gutter w-7 pr-3 shrink-0">
+              {Array.from({ length: Math.max(selectedTechs.length, 1) + 3 }).map((_, i) => (
+                <div key={i}>{i + 1}</div>
+              ))}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div>
+                <span className="text-magenta">export const</span>{' '}
+                <span className="text-cyan">stack</span>
+                <span className="text-dust"> = </span>
+                <span className="text-dust">{'['}</span>
               </div>
-            </section>
-          )
-        })}
+              {selectedTechs.length === 0 ? (
+                <div className="pl-4 text-fade">{'// empty — pick something below ↓'}</div>
+              ) : (
+                selectedTechs.map((tech, i) => (
+                  <div key={tech.id} className="pl-4 group flex items-center gap-2">
+                    <span className="text-cyan">&quot;{tech.slug}&quot;</span>
+                    <span className="text-dust">,</span>
+                    <button
+                      onClick={() => toggle(tech.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-fade hover:text-rose text-[11px]"
+                      title="remove"
+                    >
+                      [×]
+                    </button>
+                    {i === selectedTechs.length - 1 && (
+                      <span className="ml-1 text-fade text-[11px]">{`// last`}</span>
+                    )}
+                  </div>
+                ))
+              )}
+              <div>
+                <span className="text-dust">{']'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-16 pt-8 border-t border-line animate-fade-up stagger-1">
-        <h2 className="font-mono text-xs text-fade tracking-[0.2em] uppercase mb-4">Custom</h2>
-        <p className="text-sm text-dust mb-4">
-          Don&apos;t see your stack? Add any GitHub repository below.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3">
+      {/* Search bar */}
+      <div>
+        <div className="flex items-center gap-3 font-mono text-[11px] text-fade tracking-[0.2em] uppercase mb-3">
+          <span className="text-lime">§</span>
+          <span>registry</span>
+          <span className="text-mute">/</span>
+          <span>browse</span>
+          <span className="ml-auto text-mute normal-case tracking-normal">
+            {filteredTechs.length} packages
+          </span>
+        </div>
+        <div className="relative">
+          <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fade" />
           <input
-            type="text"
-            value={customName}
-            onChange={(e) => setCustomName(e.target.value)}
-            placeholder="Framework name (e.g. Svelte)"
-            className="flex-1 rounded-lg border border-line bg-shade px-3.5 py-2.5 text-sm placeholder:text-fade"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="search packages..."
+            className="w-full rounded-md border border-line bg-shade pl-10 pr-3 py-2.5 text-sm placeholder:text-fade"
           />
-          <input
-            type="text"
-            value={customUrl}
-            onChange={(e) => setCustomUrl(e.target.value)}
-            placeholder="https://github.com/user/repo"
-            className="flex-1 rounded-lg border border-line bg-shade px-3.5 py-2.5 text-sm placeholder:text-fade font-mono"
-          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-fade hover:text-ink text-[11px] font-mono"
+            >
+              esc
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Categorized package grid */}
+      <div className="space-y-10">
+        {query ? (
+          <CategorySection techs={filteredTechs} selectedIds={selectedIds} onToggle={toggle} />
+        ) : (
+          categories.map((category) => {
+            const catTechs = allTechs.filter((t) => t.category === category)
+            if (catTechs.length === 0) return null
+            return (
+              <section key={category} className="animate-fade-up">
+                <div className="flex items-center gap-3 font-mono text-[11px] text-fade tracking-[0.2em] uppercase mb-4">
+                  <span className="text-mute">└─</span>
+                  <span>{category}</span>
+                  <div className="h-px flex-1 bg-line" />
+                  <span className="text-mute normal-case tracking-normal">{catTechs.length}</span>
+                </div>
+                <CategorySection techs={catTechs} selectedIds={selectedIds} onToggle={toggle} />
+              </section>
+            )
+          })
+        )}
+      </div>
+
+      {/* Custom add */}
+      <div className="frame overflow-hidden">
+        <div className="frame-titlebar">
+          <span className="win-dots">
+            <span style={{ background: '#fb7185' }} />
+            <span style={{ background: '#fbbf24' }} />
+            <span style={{ background: '#34d399' }} />
+          </span>
+          <span className="text-dust">terminal — add custom repo</span>
+          <span className="ml-auto text-mute">github only</span>
+        </div>
+        <div className="p-4 space-y-3 font-mono text-[12.5px]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-fade">$</span>
+            <span className="text-lime">stack add</span>
+            <input
+              type="text"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder="<name>"
+              className="flex-1 min-w-[120px] rounded-sm bg-void border border-line px-2 py-1 text-ink"
+            />
+            <span className="text-fade">--repo</span>
+            <input
+              type="text"
+              value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              placeholder="github.com/owner/repo"
+              className="flex-[2] min-w-[180px] rounded-sm bg-void border border-line px-2 py-1 text-cyan"
+            />
+            <button
+              onClick={handleAddCustom}
+              disabled={adding}
+              className="inline-flex items-center gap-1.5 rounded-md bg-shade border border-ruling px-3 py-1.5 text-ink hover:border-lime hover:text-lime disabled:opacity-50 transition-colors"
+            >
+              <PlusSignIcon className="w-3.5 h-3.5" />
+              {adding ? 'adding...' : 'run'}
+            </button>
+          </div>
+          {addError ? (
+            <div className="text-rose text-[12px]">
+              <span className="text-fade">→ </span>
+              <span>error: {addError}</span>
+            </div>
+          ) : (
+            <div className="text-fade text-[12px]">
+              <span>→ </span>
+              <span>{'don\'t see your stack? add any github repo.'}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Save bar */}
+      <div className="sticky bottom-4 z-20">
+        <div className="frame flex items-center justify-between px-4 py-3 bg-shade/95 backdrop-blur">
+          <div className="flex items-center gap-3 font-mono text-[12px]">
+            <span className="text-fade">$</span>
+            <span className="text-lime">stack commit</span>
+            <span className="text-dust">--items</span>
+            <span className="text-amber">{selectedIds.size}</span>
+          </div>
           <button
-            onClick={handleAddCustom}
-            disabled={adding}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-lift border border-ruling px-4 py-2.5 text-sm font-medium text-ink hover:bg-shade disabled:opacity-50 transition-colors shrink-0"
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-md bg-lime px-4 py-2 font-mono text-[12.5px] font-semibold text-void hover:bg-lime/85 disabled:opacity-50 transition-colors"
           >
-            <PlusSignIcon className="w-4 h-4" />
-            {adding ? 'Adding...' : 'Add'}
+            {saving ? 'committing...' : 'save & continue'}
+            <ArrowRight01Icon className="w-3.5 h-3.5" />
           </button>
         </div>
-        {addError && <p className="mt-2 text-xs text-rose">{addError}</p>}
       </div>
+    </div>
+  )
+}
 
-      <div className="mt-12 pt-8 border-t border-line animate-fade-up stagger-2">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 rounded-xl bg-amber px-6 py-3 text-sm font-semibold text-void hover:bg-amber/80 disabled:opacity-50 transition-colors"
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-          <ArrowRight01Icon className="w-4 h-4" />
-        </button>
-        <span className="ml-4 text-xs text-fade">
-          {selectedIds.size} {selectedIds.size === 1 ? 'technology' : 'technologies'} selected
-        </span>
-      </div>
-    </>
+function CategorySection({
+  techs,
+  selectedIds,
+  onToggle,
+}: {
+  techs: Tech[]
+  selectedIds: Set<string>
+  onToggle: (id: string) => void
+}) {
+  if (techs.length === 0) {
+    return (
+      <div className="font-mono text-[12px] text-fade">→ no matches.</div>
+    )
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-line border border-line rounded-md overflow-hidden">
+      {techs.map((tech) => {
+        const isSelected = selectedIds.has(tech.id)
+        return (
+          <button
+            key={tech.id}
+            onClick={() => onToggle(tech.id)}
+            className={`group relative w-full text-left p-4 transition-colors ${
+              isSelected ? 'bg-lime-dim hover:bg-lime/15' : 'bg-shade hover:bg-lift'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 font-mono text-[13px]">
+                  <span className={isSelected ? 'text-lime' : 'text-fade'}>{isSelected ? '+' : '○'}</span>
+                  <span className={`truncate ${isSelected ? 'text-lime' : 'text-ink'}`}>
+                    {tech.slug}
+                  </span>
+                </div>
+                {tech.description && (
+                  <p className="text-[12px] text-fade mt-1 line-clamp-2 leading-snug">
+                    {tech.description}
+                  </p>
+                )}
+              </div>
+              <span
+                className={`shrink-0 mt-0.5 flex items-center justify-center w-5 h-5 rounded-[3px] border transition-colors ${
+                  isSelected
+                    ? 'bg-lime border-lime text-void'
+                    : 'border-ruling text-transparent group-hover:border-edge'
+                }`}
+                aria-hidden
+              >
+                <Tick01Icon className="w-3 h-3" />
+              </span>
+            </div>
+          </button>
+        )
+      })}
+    </div>
   )
 }
