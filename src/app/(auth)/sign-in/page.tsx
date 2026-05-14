@@ -20,7 +20,7 @@ export default function SignInPage() {
     setError(null)
     const { error } = await authClient.signIn.email({ email, password })
     if (error) {
-      setError(error.message ?? 'failed to sign in')
+      setError('invalid email or password')
       setLoading(false)
       return
     }
@@ -34,7 +34,7 @@ export default function SignInPage() {
       provider: 'github',
       callbackURL: '/dashboard',
     })
-    if (error) setError(error.message ?? 'failed to sign in with github')
+    if (error) setError('could not sign in with github')
   }
 
   return (

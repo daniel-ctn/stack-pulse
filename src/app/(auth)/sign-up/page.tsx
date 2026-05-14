@@ -21,7 +21,7 @@ export default function SignUpPage() {
     setError(null)
     const { error } = await authClient.signUp.email({ name, email, password })
     if (error) {
-      setError(error.message ?? 'failed to sign up')
+      setError("couldn't create account — try signing in instead")
       setLoading(false)
       return
     }
@@ -35,7 +35,7 @@ export default function SignUpPage() {
       provider: 'github',
       callbackURL: '/dashboard',
     })
-    if (error) setError(error.message ?? 'failed to sign in with github')
+    if (error) setError('could not sign in with github')
   }
 
   return (

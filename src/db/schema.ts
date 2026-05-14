@@ -8,6 +8,7 @@ import {
   boolean,
   pgEnum,
   primaryKey,
+  unique,
 } from 'drizzle-orm/pg-core'
 
 export const subscriptionStatus = pgEnum('subscription_status', ['free', 'pro', 'cancelled'])
@@ -51,23 +52,27 @@ export const userTechPreferences = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.techId] })],
 )
 
-export const releaseUpdates = pgTable('release_updates', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  techId: uuid('tech_id')
-    .notNull()
-    .references(() => technologies.id, { onDelete: 'cascade' }),
-  version: text('version').notNull(),
-  title: text('title'),
-  summary: text('summary'),
-  newFeatures: jsonb('new_features').$type<string[]>(),
-  breakingChanges: jsonb('breaking_changes').$type<string[]>(),
-  codeSnippet: text('code_snippet'),
-  importanceLevel: importanceLevel('importance_level').default('medium'),
-  rawReleaseUrl: text('raw_release_url'),
-  publishedAt: timestamp('published_at'),
-  fetchedAt: timestamp('fetched_at').notNull().defaultNow(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-})
+export const releaseUpdates = pgTable(
+  'release_updates',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    techId: uuid('tech_id')
+      .notNull()
+      .references(() => technologies.id, { onDelete: 'cascade' }),
+    version: text('version').notNull(),
+    title: text('title'),
+    summary: text('summary'),
+    newFeatures: jsonb('new_features').$type<string[]>(),
+    breakingChanges: jsonb('breaking_changes').$type<string[]>(),
+    codeSnippet: text('code_snippet'),
+    importanceLevel: importanceLevel('importance_level').default('medium'),
+    rawReleaseUrl: text('raw_release_url'),
+    publishedAt: timestamp('published_at'),
+    fetchedAt: timestamp('fetched_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [unique('release_updates_tech_version_unique').on(t.techId, t.version)],
+)
 
 export const userReadReleases = pgTable(
   'user_read_releases',
