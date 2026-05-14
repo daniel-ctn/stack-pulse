@@ -14,16 +14,15 @@ type Tech = {
 }
 
 export function TechSelector({
-  userId,
   allTechs,
   initialSelectedIds,
 }: {
-  userId: string
   allTechs: Tech[]
   initialSelectedIds: string[]
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initialSelectedIds))
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [adding, setAdding] = useState(false)
   const [customName, setCustomName] = useState('')
   const [customUrl, setCustomUrl] = useState('')
@@ -41,32 +40,28 @@ export function TechSelector({
   }
 
   const handleSave = async () => {
+    setSaveError('')
     setSaving(true)
-    await saveTechPreferences(userId, Array.from(selectedIds))
+    const result = await saveTechPreferences(Array.from(selectedIds))
     setSaving(false)
+    if (!result.ok) {
+      setSaveError(result.error)
+      return
+    }
     router.push('/dashboard')
   }
 
   const handleAddCustom = async () => {
     setAddError('')
-    if (!customName.trim()) {
-      setAddError('name is required')
-      return
-    }
-    if (!customUrl.trim()) {
-      setAddError('github url is required')
-      return
-    }
-    if (!customUrl.trim().includes('github.com')) {
-      setAddError('enter a valid github repo url')
-      return
-    }
-
     setAdding(true)
-    await addCustomTech(userId, customName, customUrl)
+    const result = await addCustomTech(customName, customUrl)
+    setAdding(false)
+    if (!result.ok) {
+      setAddError(result.error)
+      return
+    }
     setCustomName('')
     setCustomUrl('')
-    setAdding(false)
   }
 
   const selectedTechs = useMemo(
@@ -255,21 +250,29 @@ export function TechSelector({
 
       {/* Save bar */}
       <div className="sticky bottom-4 z-20">
-        <div className="frame flex items-center justify-between px-4 py-3 bg-shade/95 backdrop-blur">
-          <div className="flex items-center gap-3 font-mono text-[12px]">
-            <span className="text-fade">$</span>
-            <span className="text-lime">stack commit</span>
-            <span className="text-dust">--items</span>
-            <span className="text-amber">{selectedIds.size}</span>
+        <div className="frame px-4 py-3 bg-shade/95 backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 font-mono text-[12px]">
+              <span className="text-fade">$</span>
+              <span className="text-lime">stack commit</span>
+              <span className="text-dust">--items</span>
+              <span className="text-amber">{selectedIds.size}</span>
+            </div>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-md bg-lime px-4 py-2 font-mono text-[12.5px] font-semibold text-void hover:bg-lime/85 disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'committing...' : 'save & continue'}
+              <ArrowRight01Icon className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-md bg-lime px-4 py-2 font-mono text-[12.5px] font-semibold text-void hover:bg-lime/85 disabled:opacity-50 transition-colors"
-          >
-            {saving ? 'committing...' : 'save & continue'}
-            <ArrowRight01Icon className="w-3.5 h-3.5" />
-          </button>
+          {saveError && (
+            <p className="mt-2 font-mono text-[11.5px] text-rose">
+              <span className="text-fade">→ </span>
+              error: {saveError}
+            </p>
+          )}
         </div>
       </div>
     </div>

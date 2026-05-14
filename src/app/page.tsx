@@ -71,15 +71,12 @@ export default async function LandingPage() {
         <nav className="flex items-center gap-2 font-mono text-[12px]">
           <span className="hidden sm:inline text-fade">v0.1.0</span>
           <span className="hidden sm:inline text-mute mx-2">·</span>
-          <Link href="/sign-in" className="text-dust hover:text-ink transition-colors px-3 py-1.5">
-            sign in
-          </Link>
           <Link
-            href="/sign-up"
+            href="/sign-in"
             className="inline-flex items-center gap-1.5 rounded-md border border-ruling bg-shade px-3 py-1.5 text-ink hover:border-edge hover:bg-lift transition-colors"
           >
             <span className="text-lime">$</span>
-            <span>sign up</span>
+            <span>continue with github</span>
           </Link>
         </nav>
       </header>
@@ -160,7 +157,7 @@ export default async function LandingPage() {
             </div>
             <div className="px-4 py-3 border-t border-line font-mono text-[11px] text-fade flex items-center justify-between">
               <span>missing one? add any github repo from onboarding</span>
-              <Link href="/sign-up" className="text-lime hover:underline">
+              <Link href="/sign-in" className="text-lime hover:underline">
                 add custom →
               </Link>
             </div>
@@ -178,7 +175,7 @@ export default async function LandingPage() {
             </h2>
             <p className="mt-3 text-dust">Start with three clicks. Free forever for individuals.</p>
             <Link
-              href="/sign-up"
+              href="/sign-in"
               className="mt-7 inline-flex items-center gap-2 rounded-md bg-lime px-5 py-3 font-mono text-[13px] font-semibold text-void hover:bg-lime/85 transition-colors"
             >
               <span className="text-void/60">$</span>
@@ -192,7 +189,22 @@ export default async function LandingPage() {
           <div className="mx-auto max-w-7xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px] text-fade">
             <Logo size="sm" />
             <p className="tracking-widest">{'// built for developers, by a developer'}</p>
-            <p className="text-mute">© {new Date().getFullYear()}</p>
+            <div className="flex items-center gap-4">
+              <Link href="/privacy" className="hover:text-ink transition-colors">
+                privacy
+              </Link>
+              <Link href="/terms" className="hover:text-ink transition-colors">
+                terms
+              </Link>
+              <a
+                href="https://github.com/daniel-ctn/stack-pulse"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-ink transition-colors"
+              >
+                source ↗
+              </a>
+            </div>
           </div>
         </footer>
       </main>

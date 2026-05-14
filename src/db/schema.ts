@@ -9,7 +9,9 @@ import {
   pgEnum,
   primaryKey,
   unique,
+  index,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const subscriptionStatus = pgEnum('subscription_status', ['free', 'pro', 'cancelled'])
 
@@ -71,7 +73,10 @@ export const releaseUpdates = pgTable(
     fetchedAt: timestamp('fetched_at').notNull().defaultNow(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
-  (t) => [unique('release_updates_tech_version_unique').on(t.techId, t.version)],
+  (t) => [
+    unique('release_updates_tech_version_unique').on(t.techId, t.version),
+    index('release_updates_tech_published_idx').on(t.techId, sql`${t.publishedAt} DESC`),
+  ],
 )
 
 export const userReadReleases = pgTable(

@@ -1,0 +1,1 @@
+CREATE INDEX "release_updates_tech_published_idx" ON "release_updates" USING btree ("tech_id","published_at" DESC);

@@ -83,19 +83,21 @@ export function StackPulseHero() {
             className="mt-8 flex flex-wrap items-center gap-3 font-mono text-[13px]"
           >
             <Link
-              href="/sign-up"
+              href="/sign-in"
               className="group inline-flex items-center gap-2 rounded-md bg-lime px-4 py-2.5 font-semibold text-void hover:bg-lime/85 transition-colors"
             >
               <span className="text-void/60">$</span>
               <span>start tracking</span>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity">↵</span>
             </Link>
-            <Link
-              href="/sign-in"
+            <a
+              href="https://github.com/daniel-ctn/stack-pulse"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-md border border-ruling bg-shade px-4 py-2.5 font-medium text-ink hover:border-edge hover:bg-lift transition-colors"
             >
-              <span className="text-fade">--sign-in</span>
-            </Link>
+              <span className="text-fade">--source ↗</span>
+            </a>
           </motion.div>
 
           <motion.div

@@ -18,6 +18,9 @@ if (process.env.NODE_ENV === 'production') {
       'BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL must be set in production (trustedOrigins is empty)',
     )
   }
+  if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+    throw new Error('GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required (GitHub is the only sign-in method)')
+  }
 }
 
 export const auth = betterAuth({
@@ -30,9 +33,6 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
-  emailAndPassword: {
-    enabled: true,
-  },
   socialProviders: {
     ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
       ? {

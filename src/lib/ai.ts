@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { z } from 'zod'
 
 const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
@@ -7,17 +8,21 @@ const openai = new OpenAI({
     'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     'X-Title': 'StackPulse',
   },
+  timeout: 25_000,
+  maxRetries: 1,
 })
 
-interface ReleaseSummary {
-  version: string
-  title: string
-  summary: string
-  new_features: string[]
-  breaking_changes: string[]
-  code_snippet: string | null
-  importance_level: 'low' | 'medium' | 'high' | 'critical'
-}
+const releaseSummarySchema = z.object({
+  version: z.string(),
+  title: z.string(),
+  summary: z.string(),
+  new_features: z.array(z.string()).default([]),
+  breaking_changes: z.array(z.string()).default([]),
+  code_snippet: z.string().nullable().optional(),
+  importance_level: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+})
+
+export type ReleaseSummary = z.infer<typeof releaseSummarySchema>
 
 const SYSTEM_PROMPT = `You are a technical release analyst. Given the markdown of a GitHub release, extract key information and return a JSON object.
 
@@ -62,5 +67,9 @@ export async function summarizeRelease(
   const content = response.choices[0]?.message?.content
   if (!content) throw new Error('No response from AI')
 
-  return JSON.parse(content) as ReleaseSummary
+  const parsed = releaseSummarySchema.safeParse(JSON.parse(content))
+  if (!parsed.success) {
+    throw new Error(`AI response failed validation: ${parsed.error.message}`)
+  }
+  return parsed.data
 }

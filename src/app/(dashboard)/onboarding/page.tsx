@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { ArrowRight01Icon } from 'hugeicons-react'
 import { Logo } from '@/components/logo'
 import { TechSelector } from '@/components/tech-selector'
+import { UserMenu } from '@/components/dashboard/user-menu'
 
 export default async function OnboardingPage() {
   const session = await auth.api.getSession({
@@ -35,13 +36,17 @@ export default async function OnboardingPage() {
             <span className="text-mute">/</span>
             <span className="text-lime">configure</span>
           </div>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1.5 font-mono text-[11px] text-fade hover:text-dust transition-colors"
-          >
-            skip
-            <ArrowRight01Icon className="w-3 h-3" />
-          </Link>
+          <div className="flex items-center gap-3 font-mono text-[11px]">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 text-fade hover:text-dust transition-colors"
+            >
+              skip
+              <ArrowRight01Icon className="w-3 h-3" />
+            </Link>
+            <span className="text-mute">·</span>
+            <UserMenu email={session.user.email} />
+          </div>
         </div>
       </header>
 
@@ -64,7 +69,6 @@ export default async function OnboardingPage() {
 
         <div className="mt-10">
           <TechSelector
-            userId={session.user.id}
             allTechs={allTechs}
             initialSelectedIds={userPrefs.map((p) => p.techId)}
           />

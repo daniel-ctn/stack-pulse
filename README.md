@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StackPulse
 
-## Getting Started
+> **Every release. One feed.**
+> Daily AI-distilled summaries of the latest framework and library releases. Follow the tools you ship with, never miss a breaking change.
 
-First, run the development server:
+StackPulse is a non-profit, open-source service for developers. It watches a list of GitHub repositories you care about, fetches their releases on a schedule, and summarises each one — what's new, what's broken, the code you actually need to read.
+
+---
+
+## Features
+
+- **GitHub-only auth** via Better Auth. No email, no password, no spam.
+- **A registry of common stacks** (React, Next.js, Tailwind, Drizzle, Astro, Bun, Svelte, …) plus an "add any GitHub repo" escape hatch.
+- **AI-distilled release notes** through OpenRouter (default: `deepseek/deepseek-chat`, configurable).
+- **A git-log-style feed** with diff-style breaking changes / new features, importance badges, and source links.
+- **Self-hostable** on Vercel + Neon free tier.
+
+## Tech stack
+
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Auth | Better Auth (GitHub OAuth) |
+| DB | Postgres on Neon, Drizzle ORM |
+| AI | OpenRouter (OpenAI SDK) |
+| Hosting | Vercel + Vercel Cron |
+| UI | Tailwind v4, hugeicons-react, motion |
+
+## Running locally
+
+### Prerequisites
+
+- Node 20+
+- pnpm (`npm i -g pnpm`)
+- A Neon Postgres database (free tier is fine)
+- A GitHub OAuth app — callback URL `http://localhost:3000/api/auth/callback/github`
+- An OpenRouter API key
+
+### Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/daniel-ctn/stack-pulse.git
+cd stack-pulse
+pnpm install
+cp .env.example .env
+# fill in the values — see the file for what's required vs optional
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Database
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm db:push      # apply schema to your Neon DB
+pnpm db:seed      # seed the registry of supported stacks
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+For schema changes after the initial setup, use migrations instead:
 
-## Learn More
+```bash
+pnpm db:generate  # generate a new migration after editing src/db/schema.ts
+pnpm db:migrate   # apply pending migrations
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Dev server
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm dev
+# http://localhost:3000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Triggering the cron manually
 
-## Deploy on Vercel
+The release fetcher is a single endpoint authed by `CRON_SECRET`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+curl "http://localhost:3000/api/cron/fetch-releases?secret=<CRON_SECRET>"
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deploying
+
+The project ships with a [`vercel.json`](vercel.json) that schedules the release fetcher every 4 hours. To deploy:
+
+1. Push to GitHub.
+2. Import the repo into Vercel.
+3. Set all environment variables from `.env.example` in the Vercel project settings.
+4. Point your GitHub OAuth callback at `https://<your-domain>/api/auth/callback/github`.
+5. Push to `main`. The cron picks up automatically.
+
+## Environment variables
+
+See [`.env.example`](.env.example) for the canonical list. Required for any deploy:
+
+- `DATABASE_URL` — Neon connection string
+- `BETTER_AUTH_SECRET` — `openssl rand -hex 32`
+- `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL` — your public origin
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` — OAuth app credentials
+- `OPENROUTER_API_KEY` — for release summarisation
+- `CRON_SECRET` — `openssl rand -hex 32`
+
+Optional but recommended:
+
+- `GITHUB_TOKEN` — raises the GitHub API rate limit from 60/h to 5000/h
+
+## Project structure
+
+```
+src/
+  app/
+    (auth)/         sign-in (sign-up redirects here)
+    (dashboard)/    dashboard, onboarding
+    api/
+      auth/         Better Auth catch-all
+      cron/         release fetcher
+      webhooks/     LemonSqueezy (currently dormant)
+    privacy/        legal pages
+    terms/
+  components/
+    dashboard/      user menu
+    landing/        legal shell
+    ui/             primitives
+  db/               schema, drizzle client, seed
+  lib/              auth, github, ai, server actions
+drizzle/            versioned migrations
+```
+
+## Contributing
+
+This is a side project. Issues and PRs are welcome — particularly for new stacks to add to the seed registry, summarisation improvements, or accessibility fixes.
+
+Keep changes small and focused. Run `pnpm exec tsc --noEmit && pnpm lint` before pushing.
+
+## Licence
+
+MIT — see [`LICENSE`](LICENSE) if present, otherwise treat as MIT until one is added.

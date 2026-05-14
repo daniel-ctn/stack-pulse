@@ -7,6 +7,7 @@ import { eq, inArray, desc } from 'drizzle-orm'
 import Link from 'next/link'
 import { SparklesIcon, Link01Icon, ZapIcon } from 'hugeicons-react'
 import { Logo } from '@/components/logo'
+import { UserMenu } from '@/components/dashboard/user-menu'
 
 function sha(id: string) {
   return id.replace(/-/g, '').slice(0, 7)
@@ -167,7 +168,7 @@ export default async function DashboardPage() {
             <div className="px-6 py-16 text-center">
               <SparklesIcon className="w-7 h-7 text-fade mx-auto mb-3" />
               <p className="font-mono text-[13px] text-dust">no releases yet — we&apos;re watching.</p>
-              <p className="font-mono text-[11px] text-fade mt-1">poll interval: 15 min</p>
+              <p className="font-mono text-[11px] text-fade mt-1">poll interval: every 4h</p>
             </div>
           </div>
         ) : (
@@ -332,15 +333,15 @@ function DashHeader({ email }: { email: string }) {
           <span className="text-mute">/</span>
           <span className="text-lime">feed</span>
         </div>
-        <div className="flex items-center gap-4 font-mono text-[11px]">
+        <div className="flex items-center gap-3 font-mono text-[11px]">
           <Link
             href="/onboarding"
             className="text-dust hover:text-lime transition-colors"
           >
             edit stack
           </Link>
-          <span className="text-mute hidden sm:inline">·</span>
-          <span className="text-fade hidden sm:inline truncate max-w-[200px]">{email}</span>
+          <span className="text-mute">·</span>
+          <UserMenu email={email} />
         </div>
       </div>
     </header>
