@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Tick01Icon, ArrowRight01Icon, PlusSignIcon, Search01Icon } from 'hugeicons-react'
 import { saveTechPreferences, addCustomTech } from '@/lib/actions'
+import { PulseLoader } from '@/components/ui/pulse-loader'
 
 type Tech = {
   id: string
@@ -234,10 +235,16 @@ export function TechSelector({
             <button
               onClick={handleAddCustom}
               disabled={adding}
-              className="inline-flex items-center gap-1.5 rounded-md bg-shade border border-ruling px-3 py-1.5 text-ink hover:border-lime hover:text-lime disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-md bg-shade border border-ruling px-3 py-1.5 text-ink hover:border-lime hover:text-lime disabled:opacity-70 transition-colors"
             >
-              <PlusSignIcon className="w-3.5 h-3.5" />
-              {adding ? 'adding...' : 'run'}
+              {adding ? (
+                <PulseLoader size="inline" label="adding…" />
+              ) : (
+                <>
+                  <PlusSignIcon className="w-3.5 h-3.5" />
+                  run
+                </>
+              )}
             </button>
           </div>
           {addError ? (
@@ -267,10 +274,16 @@ export function TechSelector({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-md bg-lime px-4 py-2 font-mono text-[12.5px] font-semibold text-void hover:bg-lime/85 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 rounded-md bg-lime px-4 py-2 font-mono text-[12.5px] font-semibold text-void hover:bg-lime/85 disabled:opacity-80 transition-colors"
             >
-              {saving ? 'committing...' : 'save & continue'}
-              <ArrowRight01Icon className="w-3.5 h-3.5" />
+              {saving ? (
+                <PulseLoader size="inline" tone="dark" label="committing…" />
+              ) : (
+                <>
+                  save &amp; continue
+                  <ArrowRight01Icon className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
           </div>
           {saveError && (

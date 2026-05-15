@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { UserCircleIcon, Logout01Icon, Delete02Icon, Alert02Icon } from 'hugeicons-react'
 import { deleteAccountAction, signOutAction } from '@/lib/actions'
+import { PulseLoader } from '@/components/ui/pulse-loader'
 
 export function UserMenu({ email }: { email: string }) {
   const [open, setOpen] = useState(false)
@@ -116,9 +117,13 @@ export function UserMenu({ email }: { email: string }) {
                     <button
                       onClick={handleDelete}
                       disabled={isPending}
-                      className="flex-1 rounded-sm bg-rose px-2.5 py-1.5 font-mono text-[11.5px] font-semibold text-void hover:bg-rose/85 disabled:opacity-60 transition-colors"
+                      className="flex-1 inline-flex items-center justify-center rounded-sm bg-rose px-2.5 py-1.5 font-mono text-[11.5px] font-semibold text-void hover:bg-rose/85 disabled:opacity-80 transition-colors"
                     >
-                      {isPending ? 'deleting...' : 'yes, delete'}
+                      {isPending ? (
+                        <PulseLoader size="inline" tone="dark" label="deleting…" />
+                      ) : (
+                        'yes, delete'
+                      )}
                     </button>
                   </div>
                 </div>
