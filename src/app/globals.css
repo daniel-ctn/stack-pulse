@@ -315,12 +315,12 @@ code {
   font-size: 0.8125rem;
 }
 
-a {
+a:not([class]) {
   color: var(--ink);
   text-decoration: none;
 }
 
-a:hover {
+a:not([class]):hover {
   color: var(--lime);
 }
 
