@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
+import { getAuth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import {
   ReactIcon,
@@ -84,8 +84,10 @@ const jsonLd = {
   image: `${appUrl}/opengraph-image`,
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function LandingPage() {
-  const session = await auth.api.getSession({
+  const session = await getAuth().api.getSession({
     headers: await headers(),
   })
 
@@ -129,10 +131,7 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        <section
-          aria-labelledby="how-it-works"
-          className="mx-auto max-w-7xl px-6 pt-10 pb-24"
-        >
+        <section aria-labelledby="how-it-works" className="mx-auto max-w-7xl px-6 pt-10 pb-24">
           <p className="sr-only" id="how-it-works">
             How StackPulse tracks GitHub releases and turns them into AI-summarised digests.
           </p>
@@ -172,10 +171,7 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        <section
-          aria-labelledby="tracked-stacks"
-          className="mx-auto max-w-7xl px-6 pt-10 pb-24"
-        >
+        <section aria-labelledby="tracked-stacks" className="mx-auto max-w-7xl px-6 pt-10 pb-24">
           <p className="sr-only" id="tracked-stacks">
             Frameworks and libraries StackPulse tracks out of the box, plus support for any custom
             GitHub repository.
@@ -223,8 +219,8 @@ export default async function LandingPage() {
               stop scrolling release notes.
             </h2>
             <p className="mt-3 text-dust">
-              Free, open-source, no paywall. Sign in with GitHub and you&apos;re tracking releases in
-              under a minute.
+              Free, open-source, no paywall. Sign in with GitHub and you&apos;re tracking releases
+              in under a minute.
             </p>
             <Link
               href="/sign-in"

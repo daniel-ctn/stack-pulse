@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
-import { db } from '@/db'
+import { getAuth } from '@/lib/auth'
+import { getDb } from '@/db'
 import { releaseUpdates, userTechPreferences, technologies } from '@/db/schema'
 import { headers } from 'next/headers'
 import { eq, inArray, desc } from 'drizzle-orm'
@@ -41,12 +41,13 @@ const importanceTone: Record<string, { label: string; pill: string; bar: string;
 }
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({
+  const session = await getAuth().api.getSession({
     headers: await headers(),
   })
 
   if (!session) redirect('/sign-in')
 
+  const db = getDb()
   const prefs = await db
     .select({ techId: userTechPreferences.techId })
     .from(userTechPreferences)
@@ -167,7 +168,9 @@ export default async function DashboardPage() {
             </div>
             <div className="px-6 py-16 text-center">
               <SparklesIcon className="w-7 h-7 text-fade mx-auto mb-3" />
-              <p className="font-mono text-[13px] text-dust">no releases yet — we&apos;re watching.</p>
+              <p className="font-mono text-[13px] text-dust">
+                no releases yet — we&apos;re watching.
+              </p>
               <p className="font-mono text-[11px] text-fade mt-1">poll interval: every 4h</p>
             </div>
           </div>
@@ -310,7 +313,15 @@ export default async function DashboardPage() {
   )
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone: 'ink' | 'lime' | 'rose' }) {
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: 'ink' | 'lime' | 'rose'
+}) {
   const toneClass = tone === 'lime' ? 'text-lime' : tone === 'rose' ? 'text-rose' : 'text-ink'
   return (
     <div className="bg-shade px-4 py-3">
@@ -334,10 +345,7 @@ function DashHeader({ email }: { email: string }) {
           <span className="text-lime">feed</span>
         </div>
         <div className="flex items-center gap-3 font-mono text-[11px]">
-          <Link
-            href="/onboarding"
-            className="text-dust hover:text-lime transition-colors"
-          >
+          <Link href="/onboarding" className="text-dust hover:text-lime transition-colors">
             edit stack
           </Link>
           <span className="text-mute">·</span>

@@ -4,7 +4,6 @@ import {
   timestamp,
   uuid,
   jsonb,
-  integer,
   boolean,
   pgEnum,
   primaryKey,

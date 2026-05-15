@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { db } from './index'
+import { getDb } from './index'
 import { technologies } from './schema'
 import { eq } from 'drizzle-orm'
 
@@ -147,6 +147,8 @@ const seedTechnologies = [
 ]
 
 async function main() {
+  const db = getDb()
+
   console.log('Seeding technologies...')
 
   for (const tech of seedTechnologies) {

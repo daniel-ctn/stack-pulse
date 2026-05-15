@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/db'
-import { technologies, releaseUpdates } from '@/db/schema'
+import { getDb } from '@/db'
+import { technologies, releaseUpdates, userTechPreferences } from '@/db/schema'
 import { fetchLatestReleases, type GithubRelease } from '@/lib/github'
 import { summarizeRelease } from '@/lib/ai'
 import { and, eq } from 'drizzle-orm'
@@ -9,6 +9,7 @@ import { timingSafeEqual } from 'crypto'
 export const maxDuration = 60
 
 const CHUNK_SIZE = 6
+const RELEASES_PER_TECH = 5
 
 type Tech = typeof technologies.$inferSelect
 
@@ -23,13 +24,15 @@ function isPublishable(r: GithubRelease): boolean {
   return !r.draft && !!r.published_at && !!r.tag_name
 }
 
-async function processTech(tech: Tech): Promise<{ tech: string; inserted: number; errors: number }> {
+async function processTech(
+  tech: Tech,
+): Promise<{ tech: string; inserted: number; errors: number }> {
   let inserted = 0
   let errors = 0
 
   let releases: GithubRelease[]
   try {
-    releases = await fetchLatestReleases(tech.githubRepoUrl, 20)
+    releases = await fetchLatestReleases(tech.githubRepoUrl, RELEASES_PER_TECH)
   } catch (err) {
     console.error(`fetch failed for ${tech.name}:`, err)
     return { tech: tech.name, inserted, errors: 1 }
@@ -39,14 +42,12 @@ async function processTech(tech: Tech): Promise<{ tech: string; inserted: number
     if (!isPublishable(release)) continue
 
     try {
+      const db = getDb()
       const existing = await db
         .select({ id: releaseUpdates.id })
         .from(releaseUpdates)
         .where(
-          and(
-            eq(releaseUpdates.techId, tech.id),
-            eq(releaseUpdates.version, release.tag_name),
-          ),
+          and(eq(releaseUpdates.techId, tech.id), eq(releaseUpdates.version, release.tag_name)),
         )
         .limit(1)
 
@@ -90,15 +91,18 @@ export async function GET(request: NextRequest) {
   }
 
   const bearer = request.headers.get('authorization') ?? ''
-  const provided = bearer.startsWith('Bearer ')
-    ? bearer.slice(7)
-    : (request.nextUrl.searchParams.get('secret') ?? '')
+  const provided = bearer.startsWith('Bearer ') ? bearer.slice(7) : ''
 
   if (!safeEqual(provided, expected)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const allTechs = await db.select().from(technologies)
+  const followedRows = await getDb()
+    .select({ tech: technologies })
+    .from(technologies)
+    .innerJoin(userTechPreferences, eq(technologies.id, userTechPreferences.techId))
+
+  const allTechs = Array.from(new Map(followedRows.map((row) => [row.tech.id, row.tech])).values())
   const results: { tech: string; inserted: number; errors: number }[] = []
 
   // Process techs in parallel chunks to stay under maxDuration without hammering APIs.

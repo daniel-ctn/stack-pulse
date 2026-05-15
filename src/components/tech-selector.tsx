@@ -20,6 +20,7 @@ export function TechSelector({
   allTechs: Tech[]
   initialSelectedIds: string[]
 }) {
+  const [techs, setTechs] = useState(allTechs)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initialSelectedIds))
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -60,30 +61,35 @@ export function TechSelector({
       setAddError(result.error)
       return
     }
+    setTechs((prev) =>
+      prev.some((tech) => tech.id === result.data.id) ? prev : [...prev, result.data],
+    )
+    setSelectedIds((prev) => new Set(prev).add(result.data.id))
     setCustomName('')
     setCustomUrl('')
+    router.refresh()
   }
 
   const selectedTechs = useMemo(
-    () => allTechs.filter((t) => selectedIds.has(t.id)),
-    [allTechs, selectedIds],
+    () => techs.filter((t) => selectedIds.has(t.id)),
+    [techs, selectedIds],
   )
 
   const categories = useMemo(
-    () => Array.from(new Set(allTechs.map((t) => t.category).filter(Boolean))) as string[],
-    [allTechs],
+    () => Array.from(new Set(techs.map((t) => t.category).filter(Boolean))) as string[],
+    [techs],
   )
 
   const filteredTechs = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return allTechs
-    return allTechs.filter(
+    if (!q) return techs
+    return techs.filter(
       (t) =>
         t.name.toLowerCase().includes(q) ||
         t.slug.toLowerCase().includes(q) ||
         (t.description?.toLowerCase().includes(q) ?? false),
     )
-  }, [allTechs, query])
+  }, [techs, query])
 
   return (
     <div className="space-y-10">
@@ -178,7 +184,7 @@ export function TechSelector({
           <CategorySection techs={filteredTechs} selectedIds={selectedIds} onToggle={toggle} />
         ) : (
           categories.map((category) => {
-            const catTechs = allTechs.filter((t) => t.category === category)
+            const catTechs = techs.filter((t) => t.category === category)
             if (catTechs.length === 0) return null
             return (
               <section key={category} className="animate-fade-up">
@@ -242,7 +248,7 @@ export function TechSelector({
           ) : (
             <div className="text-fade text-[12px]">
               <span>→ </span>
-              <span>{'don\'t see your stack? add any github repo.'}</span>
+              <span>{"don't see your stack? add any github repo."}</span>
             </div>
           )}
         </div>
@@ -289,9 +295,7 @@ function CategorySection({
   onToggle: (id: string) => void
 }) {
   if (techs.length === 0) {
-    return (
-      <div className="font-mono text-[12px] text-fade">→ no matches.</div>
-    )
+    return <div className="font-mono text-[12px] text-fade">→ no matches.</div>
   }
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-line border border-line rounded-md overflow-hidden">
@@ -308,7 +312,9 @@ function CategorySection({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 font-mono text-[13px]">
-                  <span className={isSelected ? 'text-lime' : 'text-fade'}>{isSelected ? '+' : '○'}</span>
+                  <span className={isSelected ? 'text-lime' : 'text-fade'}>
+                    {isSelected ? '+' : '○'}
+                  </span>
                   <span className={`truncate ${isSelected ? 'text-lime' : 'text-ink'}`}>
                     {tech.slug}
                   </span>

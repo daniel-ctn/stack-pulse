@@ -72,7 +72,7 @@ pnpm dev
 The release fetcher is a single endpoint authed by `CRON_SECRET`:
 
 ```bash
-curl "http://localhost:3000/api/cron/fetch-releases?secret=<CRON_SECRET>"
+curl -H "Authorization: Bearer <CRON_SECRET>" "http://localhost:3000/api/cron/fetch-releases"
 ```
 
 ## Deploying

@@ -1,16 +1,29 @@
 import OpenAI from 'openai'
 import { z } from 'zod'
 
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    'X-Title': 'StackPulse',
-  },
-  timeout: 25_000,
-  maxRetries: 1,
-})
+let openai: OpenAI | null = null
+
+function getOpenAI() {
+  if (!openai) {
+    const apiKey = process.env.OPENROUTER_API_KEY
+    if (!apiKey) {
+      throw new Error('OPENROUTER_API_KEY is required')
+    }
+
+    openai = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey,
+      defaultHeaders: {
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'X-Title': 'StackPulse',
+      },
+      timeout: 25_000,
+      maxRetries: 1,
+    })
+  }
+
+  return openai
+}
 
 const releaseSummarySchema = z.object({
   version: z.string(),
@@ -51,7 +64,7 @@ export async function summarizeRelease(
 ): Promise<ReleaseSummary> {
   const model = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat'
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },

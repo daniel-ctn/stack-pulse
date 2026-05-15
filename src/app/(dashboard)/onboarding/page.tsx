@@ -1,5 +1,5 @@
-import { auth } from '@/lib/auth'
-import { db } from '@/db'
+import { getAuth } from '@/lib/auth'
+import { getDb } from '@/db'
 import { technologies, userTechPreferences } from '@/db/schema'
 import { headers } from 'next/headers'
 import { eq } from 'drizzle-orm'
@@ -11,12 +11,13 @@ import { TechSelector } from '@/components/tech-selector'
 import { UserMenu } from '@/components/dashboard/user-menu'
 
 export default async function OnboardingPage() {
-  const session = await auth.api.getSession({
+  const session = await getAuth().api.getSession({
     headers: await headers(),
   })
 
   if (!session) redirect('/sign-in')
 
+  const db = getDb()
   const allTechs = await db.select().from(technologies)
   const userPrefs = await db
     .select({ techId: userTechPreferences.techId })
@@ -68,10 +69,7 @@ export default async function OnboardingPage() {
         </div>
 
         <div className="mt-10">
-          <TechSelector
-            allTechs={allTechs}
-            initialSelectedIds={userPrefs.map((p) => p.techId)}
-          />
+          <TechSelector allTechs={allTechs} initialSelectedIds={userPrefs.map((p) => p.techId)} />
         </div>
       </main>
     </div>
