@@ -6,13 +6,12 @@ import {
   jsonb,
   boolean,
   pgEnum,
+  integer,
   primaryKey,
   unique,
   index,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
-
-export const subscriptionStatus = pgEnum('subscription_status', ['free', 'pro', 'cancelled'])
 
 export const importanceLevel = pgEnum('importance_level', ['low', 'medium', 'high', 'critical'])
 
@@ -22,9 +21,6 @@ export const users = pgTable('users', {
   name: text('name'),
   image: text('image'),
   emailVerified: boolean('email_verified').notNull().default(false),
-  subscriptionStatus: subscriptionStatus('subscription_status').notNull().default('free'),
-  lemonSqueezyCustomerId: text('lemonsqueezy_customer_id'),
-  lemonSqueezySubscriptionId: text('lemonsqueezy_subscription_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -67,6 +63,10 @@ export const releaseUpdates = pgTable(
     breakingChanges: jsonb('breaking_changes').$type<string[]>(),
     codeSnippet: text('code_snippet'),
     importanceLevel: importanceLevel('importance_level').default('medium'),
+    summaryModel: text('summary_model'),
+    summarizedAt: timestamp('summarized_at'),
+    rawReleaseBody: text('raw_release_body'),
+    isPrerelease: boolean('is_prerelease').notNull().default(false),
     rawReleaseUrl: text('raw_release_url'),
     publishedAt: timestamp('published_at'),
     fetchedAt: timestamp('fetched_at').notNull().defaultNow(),
@@ -76,6 +76,28 @@ export const releaseUpdates = pgTable(
     unique('release_updates_tech_version_unique').on(t.techId, t.version),
     index('release_updates_tech_published_idx').on(t.techId, sql`${t.publishedAt} DESC`),
   ],
+)
+
+export type ReleaseFetchRunDetail = {
+  tech: string
+  inserted: number
+  errors: number
+}
+
+export const releaseFetchRuns = pgTable(
+  'release_fetch_runs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    trigger: text('trigger').notNull(),
+    status: text('status').notNull().default('running'),
+    technologiesScanned: integer('technologies_scanned').notNull().default(0),
+    releasesInserted: integer('releases_inserted').notNull().default(0),
+    errors: integer('errors').notNull().default(0),
+    details: jsonb('details').$type<ReleaseFetchRunDetail[]>(),
+    startedAt: timestamp('started_at').notNull().defaultNow(),
+    finishedAt: timestamp('finished_at'),
+  },
+  (t) => [index('release_fetch_runs_started_idx').on(sql`${t.startedAt} DESC`)],
 )
 
 export const userReadReleases = pgTable(

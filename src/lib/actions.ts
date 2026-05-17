@@ -1,12 +1,23 @@
 'use server'
 
 import { getDb } from '@/db'
-import { technologies, userTechPreferences, users } from '@/db/schema'
+import {
+  releaseUpdates,
+  technologies,
+  userReadReleases,
+  userTechPreferences,
+  users,
+} from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { getAuth } from '@/lib/auth'
+import {
+  createReleaseFetchRun,
+  finishReleaseFetchRun,
+  processTechReleases,
+} from '@/lib/release-ingestion'
 
 type ActionResult<T = undefined> = T extends undefined
   ? { ok: true } | { ok: false; error: string }
@@ -209,12 +220,27 @@ export async function addCustomTech(
         slug: technologies.slug,
         description: technologies.description,
         category: technologies.category,
+        githubRepoUrl: technologies.githubRepoUrl,
+        createdAt: technologies.createdAt,
       })
       .from(technologies)
       .where(eq(technologies.id, techId))
       .limit(1)
 
-    return { ok: true, data: tech }
+    const runId = await createReleaseFetchRun('custom_repo')
+    const detail = await processTechReleases(tech)
+    await finishReleaseFetchRun({ runId, details: [detail] })
+
+    return {
+      ok: true,
+      data: {
+        id: tech.id,
+        name: tech.name,
+        slug: tech.slug,
+        description: tech.description,
+        category: tech.category,
+      },
+    }
   } catch (err) {
     console.error('addCustomTech failed:', err)
     return { ok: false, error: 'could not add repo — name may already be taken' }
@@ -237,5 +263,62 @@ export async function deleteAccountAction(): Promise<ActionResult> {
   } catch (err) {
     console.error('deleteAccountAction failed:', err)
     return { ok: false, error: 'could not delete account' }
+  }
+}
+
+export async function markReleasesRead(releaseIds: string[]): Promise<ActionResult> {
+  const userId = await requireUserId()
+  if (!userId) return { ok: false, error: 'not signed in' }
+
+  const uniqueIds = Array.from(new Set(releaseIds))
+  if (uniqueIds.length === 0) return { ok: true }
+  if (uniqueIds.some((id) => !UUID.test(id))) {
+    return { ok: false, error: 'invalid release selection' }
+  }
+
+  try {
+    const db = getDb()
+    const allowedRows = await db
+      .select({ id: releaseUpdates.id })
+      .from(releaseUpdates)
+      .innerJoin(
+        userTechPreferences,
+        and(
+          eq(userTechPreferences.techId, releaseUpdates.techId),
+          eq(userTechPreferences.userId, userId),
+        ),
+      )
+      .where(inArray(releaseUpdates.id, uniqueIds))
+
+    if (allowedRows.length === 0) return { ok: true }
+
+    await db
+      .insert(userReadReleases)
+      .values(allowedRows.map((row) => ({ userId, releaseId: row.id })))
+      .onConflictDoNothing()
+
+    revalidatePath('/dashboard')
+    return { ok: true }
+  } catch (err) {
+    console.error('markReleasesRead failed:', err)
+    return { ok: false, error: 'could not mark releases as read' }
+  }
+}
+
+export async function markReleaseUnread(releaseId: string): Promise<ActionResult> {
+  const userId = await requireUserId()
+  if (!userId) return { ok: false, error: 'not signed in' }
+  if (!UUID.test(releaseId)) return { ok: false, error: 'invalid release' }
+
+  try {
+    await getDb()
+      .delete(userReadReleases)
+      .where(and(eq(userReadReleases.userId, userId), eq(userReadReleases.releaseId, releaseId)))
+
+    revalidatePath('/dashboard')
+    return { ok: true }
+  } catch (err) {
+    console.error('markReleaseUnread failed:', err)
+    return { ok: false, error: 'could not mark release as unread' }
   }
 }

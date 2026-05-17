@@ -7,8 +7,13 @@ import { Logo } from '@/components/logo'
 import { ReleaseFeed } from '@/components/dashboard/release-feed'
 import { UserMenu } from '@/components/dashboard/user-menu'
 import { getAuth } from '@/lib/auth'
-import { getReleaseFeedPage, getUserTechIds } from '@/lib/release-feed'
-import { parseImportanceFilter } from '@/lib/release-feed-types'
+import { getReleaseFeedPage, getUserTechIds, getUserTechOptions } from '@/lib/release-feed'
+import {
+  parseImportanceFilter,
+  parseReadFilter,
+  parseSearchFilter,
+  parseTechFilter,
+} from '@/lib/release-feed-types'
 
 export default async function DashboardPage({
   searchParams,
@@ -23,6 +28,9 @@ export default async function DashboardPage({
 
   const params = await searchParams
   const importance = parseImportanceFilter(params?.importance)
+  const read = parseReadFilter(params?.read)
+  const tech = parseTechFilter(params?.tech)
+  const search = parseSearchFilter(params?.q)
   const techIds = await getUserTechIds(session.user.id)
 
   if (techIds.length === 0) {
@@ -70,7 +78,17 @@ export default async function DashboardPage({
     )
   }
 
-  const initialPage = await getReleaseFeedPage({ techIds, importance })
+  const [initialPage, techOptions] = await Promise.all([
+    getReleaseFeedPage({
+      userId: session.user.id,
+      techIds,
+      importance,
+      read,
+      tech,
+      search,
+    }),
+    getUserTechOptions(session.user.id),
+  ])
 
   return (
     <div className="flex-1">
@@ -92,7 +110,14 @@ export default async function DashboardPage({
           </p>
         </div>
 
-        <ReleaseFeed initialImportance={importance} initialPage={initialPage} />
+        <ReleaseFeed
+          initialImportance={importance}
+          initialRead={read}
+          initialTech={tech}
+          initialSearch={search}
+          initialPage={initialPage}
+          techOptions={techOptions}
+        />
       </main>
     </div>
   )

@@ -37,6 +37,15 @@ const releaseSummarySchema = z.object({
 
 export type ReleaseSummary = z.infer<typeof releaseSummarySchema>
 
+export type SummarizeReleaseInput = {
+  repoName: string
+  version: string
+  title: string | null
+  body: string | null
+  url: string
+  prerelease: boolean
+}
+
 const SYSTEM_PROMPT = `You are a technical release analyst. Given the markdown of a GitHub release, extract key information and return a JSON object.
 
 Rules:
@@ -46,6 +55,7 @@ Rules:
 - List breaking changes (if any) with clear explanations (max 5)
 - Extract ONE most relevant code snippet from the release (if any code examples exist)
 - Rate importance: "critical" (major security fix or breaking), "high" (significant new features), "medium" (notable improvements), "low" (minor fixes/chores)
+- If release notes are empty or too vague, be conservative: explain that the source release notes are limited and do not invent features
 
 Return ONLY valid JSON in this exact format:
 {
@@ -58,11 +68,9 @@ Return ONLY valid JSON in this exact format:
   "importance_level": "low" | "medium" | "high" | "critical"
 }`
 
-export async function summarizeRelease(
-  releaseBody: string,
-  repoName: string,
-): Promise<ReleaseSummary> {
+export async function summarizeRelease(input: SummarizeReleaseInput): Promise<ReleaseSummary> {
   const model = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat'
+  const body = input.body?.trim()
 
   const response = await getOpenAI().chat.completions.create({
     model,
@@ -70,7 +78,16 @@ export async function summarizeRelease(
       { role: 'system', content: SYSTEM_PROMPT },
       {
         role: 'user',
-        content: `Analyze this GitHub release for ${repoName}:\n\n${releaseBody.slice(0, 8000)}`,
+        content: [
+          `Repository: ${input.repoName}`,
+          `Version/tag: ${input.version}`,
+          `Release title: ${input.title || input.version}`,
+          `Prerelease: ${input.prerelease ? 'yes' : 'no'}`,
+          `Source URL: ${input.url}`,
+          '',
+          'Release markdown:',
+          body ? body.slice(0, 8000) : '(No release notes were provided.)',
+        ].join('\n'),
       },
     ],
     temperature: 0.1,

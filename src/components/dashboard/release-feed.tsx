@@ -1,16 +1,20 @@
 'use client'
 
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { Link01Icon } from 'hugeicons-react'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useTransition, type ReactNode } from 'react'
 
+import { markReleaseUnread, markReleasesRead } from '@/lib/actions'
 import {
   importanceFilters,
+  readFilters,
   type ImportanceFilter,
+  type ReadFilter,
   type ReleaseFeedItem,
   type ReleaseFeedPage,
+  type ReleaseFeedTechOption,
 } from '@/lib/release-feed-types'
 import { cn } from '@/lib/utils'
 
@@ -50,23 +54,51 @@ const filterLabels: Record<ImportanceFilter, string> = {
 
 export function ReleaseFeed({
   initialImportance,
+  initialRead,
+  initialTech,
+  initialSearch,
   initialPage,
+  techOptions,
 }: {
   initialImportance: ImportanceFilter
+  initialRead: ReadFilter
+  initialTech: string
+  initialSearch: string
   initialPage: ReleaseFeedPage
+  techOptions: ReleaseFeedTechOption[]
 }) {
+  const queryClient = useQueryClient()
+  const [isMarking, startMarking] = useTransition()
   const [importance, setImportance] = useQueryState(
     'importance',
     parseAsStringLiteral(importanceFilters).withDefault('all'),
   )
+  const [read, setRead] = useQueryState(
+    'read',
+    parseAsStringLiteral(readFilters).withDefault('all'),
+  )
+  const [tech, setTech] = useQueryState('tech')
+  const [search, setSearch] = useQueryState('q')
+  const techFilter = tech || 'all'
+  const searchFilter = search || ''
 
   const query = useInfiniteQuery({
-    queryKey: ['release-feed', importance],
-    queryFn: ({ pageParam }) => fetchReleasePage(importance, pageParam),
+    queryKey: ['release-feed', importance, read, techFilter, searchFilter],
+    queryFn: ({ pageParam }) =>
+      fetchReleasePage({
+        importance,
+        read,
+        tech: techFilter,
+        search: searchFilter,
+        cursor: pageParam,
+      }),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialData:
-      importance === initialImportance
+      importance === initialImportance &&
+      read === initialRead &&
+      techFilter === initialTech &&
+      searchFilter === initialSearch
         ? {
             pages: [initialPage],
             pageParams: [null],
@@ -102,37 +134,102 @@ export function ReleaseFeed({
   const breakingCount = releases.filter(
     (release) => release.importanceLevel === 'critical' || release.importanceLevel === 'high',
   ).length
+  const unreadCount = releases.filter((release) => !release.isRead).length
   const today = new Date()
   const todayCount = releases.filter((release) => {
     if (!release.publishedAt) return false
     return new Date(release.publishedAt).toDateString() === today.toDateString()
   }).length
 
+  const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['release-feed'] })
+
+  const handleMarkVisibleRead = () => {
+    const unreadIds = releases.filter((release) => !release.isRead).map((release) => release.id)
+    if (unreadIds.length === 0) return
+
+    startMarking(async () => {
+      const result = await markReleasesRead(unreadIds)
+      if (result.ok) refreshFeed()
+    })
+  }
+
+  const handleToggleRead = (release: ReleaseFeedItem) => {
+    startMarking(async () => {
+      const result = release.isRead
+        ? await markReleaseUnread(release.id)
+        : await markReleasesRead([release.id])
+      if (result.ok) refreshFeed()
+    })
+  }
+
   return (
     <>
-      <div className="mt-6 grid grid-cols-3 gap-px bg-line border border-line rounded-md overflow-hidden">
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-px bg-line border border-line rounded-md overflow-hidden">
         <Stat label="loaded" value={String(releases.length)} tone="ink" />
+        <Stat label="unread" value={String(unreadCount)} tone="cyan" />
         <Stat label="today" value={String(todayCount)} tone="lime" />
         <Stat label="breaking" value={String(breakingCount)} tone="rose" />
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 font-mono text-[11px]">
-        <span className="text-fade tracking-[0.16em] uppercase">importance</span>
-        <div className="inline-flex flex-wrap gap-1 rounded-md border border-line bg-shade p-1">
-          {importanceFilters.map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              aria-pressed={importance === filter}
-              onClick={() => setImportance(filter)}
-              className={cn(
-                'rounded-[3px] px-2.5 py-1 text-fade transition-colors hover:text-ink',
-                importance === filter && 'bg-lift text-lime shadow-[inset_0_0_0_1px_var(--line)]',
-              )}
-            >
-              {filterLabels[filter]}
-            </button>
-          ))}
+      <div className="mt-4 frame p-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto]">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+            <span className="text-fade tracking-[0.16em] uppercase">importance</span>
+            <Segmented>
+              {importanceFilters.map((filter) => (
+                <SegmentButton
+                  key={filter}
+                  active={importance === filter}
+                  onClick={() => setImportance(filter)}
+                >
+                  {filterLabels[filter]}
+                </SegmentButton>
+              ))}
+            </Segmented>
+
+            <span className="ml-0 text-fade tracking-[0.16em] uppercase sm:ml-2">status</span>
+            <Segmented>
+              {readFilters.map((filter) => (
+                <SegmentButton
+                  key={filter}
+                  active={read === filter}
+                  onClick={() => setRead(filter)}
+                >
+                  {filter}
+                </SegmentButton>
+              ))}
+            </Segmented>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleMarkVisibleRead}
+            disabled={isMarking || unreadCount === 0}
+            className="justify-self-start rounded-md border border-ruling bg-shade px-3 py-1.5 font-mono text-[11px] text-dust transition-colors hover:border-lime hover:text-lime disabled:opacity-50 lg:justify-self-end"
+          >
+            mark visible read
+          </button>
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[190px_1fr]">
+          <select
+            value={techFilter}
+            onChange={(e) => setTech(e.target.value === 'all' ? null : e.target.value)}
+            className="h-9 rounded-md border border-line bg-void px-3 font-mono text-[12px] text-dust"
+          >
+            <option value="all">all stacks</option>
+            {techOptions.map((option) => (
+              <option key={option.id} value={option.slug}>
+                {option.slug}
+              </option>
+            ))}
+          </select>
+          <input
+            value={searchFilter}
+            onChange={(e) => setSearch(e.target.value || null)}
+            placeholder="search releases, versions, summaries..."
+            className="h-9 rounded-md border border-line bg-void px-3 font-mono text-[12px] text-dust placeholder:text-fade"
+          />
         </div>
       </div>
 
@@ -168,7 +265,12 @@ export function ReleaseFeed({
                   style={{ transform: `translateY(${virtualItem.start}px)` }}
                 >
                   {release ? (
-                    <ReleaseCard release={release} index={virtualItem.index} />
+                    <ReleaseCard
+                      release={release}
+                      index={virtualItem.index}
+                      onToggleRead={handleToggleRead}
+                      isMarking={isMarking}
+                    />
                   ) : (
                     <FeedStatus label="loading more..." compact />
                   )}
@@ -182,9 +284,24 @@ export function ReleaseFeed({
   )
 }
 
-async function fetchReleasePage(importance: ImportanceFilter, cursor: string | null) {
+async function fetchReleasePage({
+  importance,
+  read,
+  tech,
+  search,
+  cursor,
+}: {
+  importance: ImportanceFilter
+  read: ReadFilter
+  tech: string
+  search: string
+  cursor: string | null
+}) {
   const params = new URLSearchParams()
   params.set('importance', importance)
+  params.set('read', read)
+  params.set('tech', tech)
+  if (search) params.set('q', search)
   if (cursor) params.set('cursor', cursor)
 
   const response = await fetch(`/api/releases?${params.toString()}`)
@@ -193,7 +310,17 @@ async function fetchReleasePage(importance: ImportanceFilter, cursor: string | n
   return (await response.json()) as ReleaseFeedPage
 }
 
-function ReleaseCard({ release, index }: { release: ReleaseFeedItem; index: number }) {
+function ReleaseCard({
+  release,
+  index,
+  onToggleRead,
+  isMarking,
+}: {
+  release: ReleaseFeedItem
+  index: number
+  onToggleRead: (release: ReleaseFeedItem) => void
+  isMarking: boolean
+}) {
   const tone = importanceTone[release.importanceLevel || 'medium'] || importanceTone.medium
   const hasBreaking =
     release.breakingChanges &&
@@ -239,6 +366,26 @@ function ReleaseCard({ release, index }: { release: ReleaseFeedItem; index: numb
 
           {release.summary && (
             <p className="mt-2.5 text-[14px] text-dust leading-relaxed">{release.summary}</p>
+          )}
+
+          {(release.isPrerelease || release.summaryModel || release.summarizedAt) && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[10px] text-fade">
+              {release.isPrerelease && (
+                <span className="rounded-[3px] border border-violet/30 bg-violet/10 px-1.5 py-0.5 text-violet">
+                  prerelease
+                </span>
+              )}
+              {release.summaryModel && <span>model: {release.summaryModel}</span>}
+              {release.summarizedAt && (
+                <span>
+                  summarized{' '}
+                  {new Date(release.summarizedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+              )}
+            </div>
           )}
 
           {(hasBreaking || hasNewFeatures) && (
@@ -289,16 +436,31 @@ function ReleaseCard({ release, index }: { release: ReleaseFeedItem; index: numb
           )}
 
           {release.rawReleaseUrl && (
-            <a
-              href={release.rawReleaseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-1.5 font-mono text-[11px] text-fade hover:text-lime transition-colors"
-            >
-              <Link01Icon className="w-3 h-3" />
-              view source on github
-              <span className="text-mute">↗</span>
-            </a>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <a
+                href={release.rawReleaseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 font-mono text-[11px] text-fade hover:text-lime transition-colors"
+              >
+                <Link01Icon className="w-3 h-3" />
+                view source on github
+                <span className="text-mute">↗</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => onToggleRead(release)}
+                disabled={isMarking}
+                className={cn(
+                  'rounded-md border px-2.5 py-1.5 font-mono text-[11px] transition-colors disabled:opacity-50',
+                  release.isRead
+                    ? 'border-ruling text-fade hover:border-cyan hover:text-cyan'
+                    : 'border-lime/30 bg-lime-dim text-lime hover:bg-lime/15',
+                )}
+              >
+                {release.isRead ? 'mark unread' : 'mark read'}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -313,14 +475,53 @@ function Stat({
 }: {
   label: string
   value: string
-  tone: 'ink' | 'lime' | 'rose'
+  tone: 'ink' | 'lime' | 'rose' | 'cyan'
 }) {
-  const toneClass = tone === 'lime' ? 'text-lime' : tone === 'rose' ? 'text-rose' : 'text-ink'
+  const toneClass =
+    tone === 'lime'
+      ? 'text-lime'
+      : tone === 'rose'
+        ? 'text-rose'
+        : tone === 'cyan'
+          ? 'text-cyan'
+          : 'text-ink'
   return (
     <div className="bg-shade px-4 py-3">
       <div className="font-mono text-[10px] text-fade tracking-[0.2em] uppercase">{label}</div>
       <div className={`mt-1 font-mono text-2xl font-semibold ${toneClass}`}>{value}</div>
     </div>
+  )
+}
+
+function Segmented({ children }: { children: ReactNode }) {
+  return (
+    <div className="inline-flex flex-wrap gap-1 rounded-md border border-line bg-void p-1">
+      {children}
+    </div>
+  )
+}
+
+function SegmentButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        'rounded-[3px] px-2.5 py-1 text-fade transition-colors hover:text-ink',
+        active && 'bg-lift text-lime shadow-[inset_0_0_0_1px_var(--line)]',
+      )}
+    >
+      {children}
+    </button>
   )
 }
 

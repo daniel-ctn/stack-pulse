@@ -1,8 +1,13 @@
-import { and, desc, eq, inArray, lt, or } from 'drizzle-orm'
+import { and, desc, eq, ilike, inArray, isNull, lt, or } from 'drizzle-orm'
 
 import { getDb } from '@/db'
-import { releaseUpdates, technologies, userTechPreferences } from '@/db/schema'
-import type { ImportanceFilter, ReleaseFeedPage } from '@/lib/release-feed-types'
+import { releaseUpdates, technologies, userReadReleases, userTechPreferences } from '@/db/schema'
+import type {
+  ImportanceFilter,
+  ReadFilter,
+  ReleaseFeedPage,
+  ReleaseFeedTechOption,
+} from '@/lib/release-feed-types'
 
 export const RELEASE_FEED_PAGE_SIZE = 30
 
@@ -28,14 +33,35 @@ export async function getUserTechIds(userId: string) {
   return prefs.map((p) => p.techId)
 }
 
+export async function getUserTechOptions(userId: string): Promise<ReleaseFeedTechOption[]> {
+  return getDb()
+    .select({
+      id: technologies.id,
+      name: technologies.name,
+      slug: technologies.slug,
+    })
+    .from(userTechPreferences)
+    .innerJoin(technologies, eq(userTechPreferences.techId, technologies.id))
+    .where(eq(userTechPreferences.userId, userId))
+    .orderBy(technologies.name)
+}
+
 export async function getReleaseFeedPage({
+  userId,
   techIds,
   importance,
+  read,
+  tech,
+  search,
   cursor,
   limit = RELEASE_FEED_PAGE_SIZE,
 }: {
+  userId: string
   techIds: string[]
   importance: ImportanceFilter
+  read: ReadFilter
+  tech: string
+  search: string
   cursor?: string | null
   limit?: number
 }): Promise<ReleaseFeedPage> {
@@ -49,6 +75,27 @@ export async function getReleaseFeedPage({
 
   if (levels) {
     conditions.push(inArray(releaseUpdates.importanceLevel, levels))
+  }
+
+  if (read === 'unread') {
+    conditions.push(isNull(userReadReleases.releaseId))
+  }
+
+  if (tech !== 'all') {
+    conditions.push(eq(technologies.slug, tech))
+  }
+
+  if (search) {
+    const pattern = `%${search}%`
+    conditions.push(
+      or(
+        ilike(releaseUpdates.title, pattern),
+        ilike(releaseUpdates.summary, pattern),
+        ilike(releaseUpdates.version, pattern),
+        ilike(technologies.name, pattern),
+        ilike(technologies.slug, pattern),
+      )!,
+    )
   }
 
   if (cursorValue) {
@@ -73,11 +120,19 @@ export async function getReleaseFeedPage({
       importanceLevel: releaseUpdates.importanceLevel,
       publishedAt: releaseUpdates.publishedAt,
       rawReleaseUrl: releaseUpdates.rawReleaseUrl,
+      isPrerelease: releaseUpdates.isPrerelease,
+      summaryModel: releaseUpdates.summaryModel,
+      summarizedAt: releaseUpdates.summarizedAt,
+      readAt: userReadReleases.readAt,
       techName: technologies.name,
       techSlug: technologies.slug,
     })
     .from(releaseUpdates)
     .innerJoin(technologies, eq(releaseUpdates.techId, technologies.id))
+    .leftJoin(
+      userReadReleases,
+      and(eq(userReadReleases.releaseId, releaseUpdates.id), eq(userReadReleases.userId, userId)),
+    )
     .where(and(...conditions))
     .orderBy(desc(releaseUpdates.publishedAt), desc(releaseUpdates.id))
     .limit(limit + 1)
@@ -90,6 +145,9 @@ export async function getReleaseFeedPage({
     items: pageRows.map((row) => ({
       ...row,
       publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      summarizedAt: row.summarizedAt ? row.summarizedAt.toISOString() : null,
+      readAt: row.readAt ? row.readAt.toISOString() : null,
+      isRead: !!row.readAt,
     })),
     nextCursor:
       hasNextPage && last?.publishedAt
@@ -99,8 +157,9 @@ export async function getReleaseFeedPage({
 }
 
 function createCursor(item: { publishedAt: Date; id: string }) {
-  return Buffer.from(JSON.stringify({ publishedAt: item.publishedAt.toISOString(), id: item.id }))
-    .toString('base64url')
+  return Buffer.from(
+    JSON.stringify({ publishedAt: item.publishedAt.toISOString(), id: item.id }),
+  ).toString('base64url')
 }
 
 function parseCursor(cursor: string | null | undefined): FeedCursor | null {

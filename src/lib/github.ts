@@ -13,8 +13,16 @@ export interface GithubRelease {
 
 const TIMEOUT_MS = 8000
 
-export async function fetchLatestReleases(repoUrl: string, perPage = 5): Promise<GithubRelease[]> {
+export function parseGithubRepoUrl(repoUrl: string): { owner: string; repo: string } {
   const [, , , owner, repo] = repoUrl.replace(/\/$/, '').split('/')
+  if (!owner || !repo) {
+    throw new Error(`Invalid GitHub repo URL: ${repoUrl}`)
+  }
+  return { owner, repo }
+}
+
+export async function fetchLatestReleases(repoUrl: string, perPage = 5): Promise<GithubRelease[]> {
+  const { owner, repo } = parseGithubRepoUrl(repoUrl)
 
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github.v3+json',

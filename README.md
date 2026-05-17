@@ -13,18 +13,20 @@ StackPulse is a non-profit, open-source service for developers. It watches a lis
 - **A registry of common stacks** (React, Next.js, Tailwind, Drizzle, Astro, Bun, Svelte, …) plus an "add any GitHub repo" escape hatch.
 - **AI-distilled release notes** through OpenRouter (default: `deepseek/deepseek-chat`, configurable).
 - **A git-log-style feed** with diff-style breaking changes / new features, importance badges, and source links.
+- **Read/unread workflow** with stack, importance, status, and text filters.
+- **Fetch run history** for cron/custom repo ingestion health.
 - **Self-hostable** on Vercel + Neon free tier.
 
 ## Tech stack
 
-| | |
-|---|---|
-| Framework | Next.js 16 (App Router) |
-| Auth | Better Auth (GitHub OAuth) |
-| DB | Postgres on Neon, Drizzle ORM |
-| AI | OpenRouter (OpenAI SDK) |
-| Hosting | Vercel + Vercel Cron |
-| UI | Tailwind v4, hugeicons-react, motion |
+|           |                                      |
+| --------- | ------------------------------------ |
+| Framework | Next.js 16 (App Router)              |
+| Auth      | Better Auth (GitHub OAuth)           |
+| DB        | Postgres on Neon, Drizzle ORM        |
+| AI        | OpenRouter (OpenAI SDK)              |
+| Hosting   | Vercel + Vercel Cron                 |
+| UI        | Tailwind v4, hugeicons-react, motion |
 
 ## Running locally
 
@@ -110,7 +112,6 @@ src/
     api/
       auth/         Better Auth catch-all
       cron/         release fetcher
-      webhooks/     LemonSqueezy (currently dormant)
     privacy/        legal pages
     terms/
   components/

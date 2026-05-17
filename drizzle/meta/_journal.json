@@ -15,6 +15,13 @@
       "when": 1778760386112,
       "tag": "0001_remarkable_roughhouse",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779023072525,
+      "tag": "0002_military_galactus",
+      "breakpoints": true
     }
   ]
 }
