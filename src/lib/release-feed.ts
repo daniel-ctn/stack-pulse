@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, isNull, lt, or } from 'drizzle-orm'
+import { and, desc, eq, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 
 import { getDb } from '@/db'
 import { releaseUpdates, technologies, userReadReleases, userTechPreferences } from '@/db/schema'
@@ -7,6 +7,7 @@ import type {
   ReadFilter,
   ReleaseFeedPage,
   ReleaseFeedTechOption,
+  SignalFilter,
 } from '@/lib/release-feed-types'
 
 export const RELEASE_FEED_PAGE_SIZE = 30
@@ -51,6 +52,7 @@ export async function getReleaseFeedPage({
   techIds,
   importance,
   read,
+  signal,
   tech,
   search,
   cursor,
@@ -60,6 +62,7 @@ export async function getReleaseFeedPage({
   techIds: string[]
   importance: ImportanceFilter
   read: ReadFilter
+  signal: SignalFilter
   tech: string
   search: string
   cursor?: string | null
@@ -81,6 +84,10 @@ export async function getReleaseFeedPage({
     conditions.push(isNull(userReadReleases.releaseId))
   }
 
+  if (signal !== 'all') {
+    conditions.push(createSignalCondition(signal))
+  }
+
   if (tech !== 'all') {
     conditions.push(eq(technologies.slug, tech))
   }
@@ -91,9 +98,14 @@ export async function getReleaseFeedPage({
       or(
         ilike(releaseUpdates.title, pattern),
         ilike(releaseUpdates.summary, pattern),
+        ilike(releaseUpdates.impactSummary, pattern),
+        ilike(releaseUpdates.recommendedAction, pattern),
         ilike(releaseUpdates.version, pattern),
         ilike(technologies.name, pattern),
         ilike(technologies.slug, pattern),
+        sql`${releaseUpdates.securityNotes}::text ILIKE ${pattern}`,
+        sql`${releaseUpdates.deprecations}::text ILIKE ${pattern}`,
+        sql`${releaseUpdates.migrationSteps}::text ILIKE ${pattern}`,
       )!,
     )
   }
@@ -116,6 +128,12 @@ export async function getReleaseFeedPage({
       summary: releaseUpdates.summary,
       newFeatures: releaseUpdates.newFeatures,
       breakingChanges: releaseUpdates.breakingChanges,
+      securityNotes: releaseUpdates.securityNotes,
+      deprecations: releaseUpdates.deprecations,
+      migrationSteps: releaseUpdates.migrationSteps,
+      impactSummary: releaseUpdates.impactSummary,
+      recommendedAction: releaseUpdates.recommendedAction,
+      releaseSignals: releaseUpdates.releaseSignals,
       codeSnippet: releaseUpdates.codeSnippet,
       importanceLevel: releaseUpdates.importanceLevel,
       publishedAt: releaseUpdates.publishedAt,
@@ -142,18 +160,81 @@ export async function getReleaseFeedPage({
   const hasNextPage = rows.length > limit
 
   return {
-    items: pageRows.map((row) => ({
-      ...row,
-      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
-      summarizedAt: row.summarizedAt ? row.summarizedAt.toISOString() : null,
-      readAt: row.readAt ? row.readAt.toISOString() : null,
-      isRead: !!row.readAt,
-    })),
+    items: pageRows.map((row) => {
+      const releaseSignals = createReleaseSignals(row)
+
+      return {
+        ...row,
+        releaseSignals,
+        publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+        summarizedAt: row.summarizedAt ? row.summarizedAt.toISOString() : null,
+        readAt: row.readAt ? row.readAt.toISOString() : null,
+        isRead: !!row.readAt,
+      }
+    }),
     nextCursor:
       hasNextPage && last?.publishedAt
         ? createCursor({ id: last.id, publishedAt: last.publishedAt })
         : null,
   }
+}
+
+function createSignalCondition(signal: Exclude<SignalFilter, 'all'>) {
+  if (signal === 'breaking') {
+    return or(
+      sql`${releaseUpdates.releaseSignals} ? ${signal}`,
+      sql`coalesce(jsonb_array_length(${releaseUpdates.breakingChanges}), 0) > 0`,
+    )!
+  }
+
+  if (signal === 'deprecation') {
+    return or(
+      sql`${releaseUpdates.releaseSignals} ? ${signal}`,
+      sql`coalesce(jsonb_array_length(${releaseUpdates.deprecations}), 0) > 0`,
+    )!
+  }
+
+  if (signal === 'migration') {
+    return or(
+      sql`${releaseUpdates.releaseSignals} ? ${signal}`,
+      sql`coalesce(jsonb_array_length(${releaseUpdates.migrationSteps}), 0) > 0`,
+    )!
+  }
+
+  if (signal === 'feature') {
+    return or(
+      sql`${releaseUpdates.releaseSignals} ? ${signal}`,
+      sql`coalesce(jsonb_array_length(${releaseUpdates.newFeatures}), 0) > 0`,
+    )!
+  }
+
+  if (signal === 'security') {
+    return or(
+      sql`${releaseUpdates.releaseSignals} ? ${signal}`,
+      sql`coalesce(jsonb_array_length(${releaseUpdates.securityNotes}), 0) > 0`,
+    )!
+  }
+
+  return sql`${releaseUpdates.releaseSignals} ? ${signal}`
+}
+
+function createReleaseSignals(row: {
+  releaseSignals: string[] | null
+  breakingChanges: string[] | null
+  securityNotes: string[] | null
+  deprecations: string[] | null
+  migrationSteps: string[] | null
+  newFeatures: string[] | null
+}) {
+  const signals = new Set(row.releaseSignals ?? [])
+
+  if (row.breakingChanges?.length) signals.add('breaking')
+  if (row.securityNotes?.length) signals.add('security')
+  if (row.deprecations?.length) signals.add('deprecation')
+  if (row.migrationSteps?.length) signals.add('migration')
+  if (row.newFeatures?.length) signals.add('feature')
+
+  return Array.from(signals)
 }
 
 function createCursor(item: { publishedAt: Date; id: string }) {

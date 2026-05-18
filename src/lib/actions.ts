@@ -2,6 +2,7 @@
 
 import { getDb } from '@/db'
 import {
+  digestSubscribers,
   releaseUpdates,
   technologies,
   userReadReleases,
@@ -26,10 +27,60 @@ type ActionResult<T = undefined> = T extends undefined
 const MAX_TECH_PREFERENCES = 30
 const MAX_CUSTOM_TECH_PREFERENCES = 5
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const STACK_SLUG = /^[a-z0-9-]+$/
+const SOURCE = /^[a-z0-9:_-]+$/i
+const MAX_EMAIL_LENGTH = 254
+const MAX_DIGEST_SIGNUPS_PER_WINDOW = 5
+const DIGEST_SIGNUP_WINDOW_MS = 60 * 60 * 1000
+const MAX_DIGEST_RATE_LIMIT_KEYS = 1000
+const digestSignupAttempts = new Map<string, { count: number; resetAt: number }>()
 
 async function requireUserId(): Promise<string | null> {
   const session = await getAuth().api.getSession({ headers: await headers() })
   return session?.user.id ?? null
+}
+
+async function getRequestIp(): Promise<string> {
+  const headerList = await headers()
+  return (
+    headerList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    headerList.get('x-real-ip') ||
+    'unknown'
+  )
+}
+
+function isDigestSignupRateLimited(ip: string): boolean {
+  const now = Date.now()
+  pruneDigestSignupAttempts(now)
+
+  const current = digestSignupAttempts.get(ip)
+
+  if (!current || current.resetAt <= now) {
+    digestSignupAttempts.set(ip, { count: 1, resetAt: now + DIGEST_SIGNUP_WINDOW_MS })
+    return false
+  }
+
+  if (current.count >= MAX_DIGEST_SIGNUPS_PER_WINDOW) {
+    return true
+  }
+
+  current.count += 1
+  return false
+}
+
+function pruneDigestSignupAttempts(now: number) {
+  if (digestSignupAttempts.size < MAX_DIGEST_RATE_LIMIT_KEYS) return
+
+  for (const [ip, attempt] of digestSignupAttempts) {
+    if (attempt.resetAt <= now) digestSignupAttempts.delete(ip)
+  }
+
+  while (digestSignupAttempts.size >= MAX_DIGEST_RATE_LIMIT_KEYS) {
+    const oldestIp = digestSignupAttempts.keys().next().value
+    if (!oldestIp) break
+    digestSignupAttempts.delete(oldestIp)
+  }
 }
 
 export async function saveTechPreferences(techIds: string[]): Promise<ActionResult> {
@@ -90,6 +141,77 @@ export async function saveTechPreferences(techIds: string[]): Promise<ActionResu
   } catch (err) {
     console.error('saveTechPreferences failed:', err)
     return { ok: false, error: 'could not save changes' }
+  }
+}
+
+export async function subscribeToDigest({
+  email,
+  stackSlug,
+  source = 'public',
+  website,
+}: {
+  email: string
+  stackSlug?: string | null
+  source?: string
+  website?: string | null
+}): Promise<ActionResult> {
+  if (website?.trim()) {
+    return { ok: true }
+  }
+
+  const normalizedEmail = email.trim().toLowerCase()
+  const normalizedStackSlug = stackSlug?.trim() || null
+  const trimmedSource = source.trim().slice(0, 40)
+  const normalizedSource = trimmedSource && SOURCE.test(trimmedSource) ? trimmedSource : 'public'
+
+  if (normalizedEmail.length > MAX_EMAIL_LENGTH || !EMAIL.test(normalizedEmail)) {
+    return { ok: false, error: 'enter a valid email address' }
+  }
+
+  if (normalizedStackSlug && !STACK_SLUG.test(normalizedStackSlug)) {
+    return { ok: false, error: 'invalid stack selection' }
+  }
+
+  try {
+    const ip = await getRequestIp()
+    if (isDigestSignupRateLimited(ip)) {
+      return { ok: false, error: 'too many signups; try again later' }
+    }
+
+    const db = getDb()
+
+    if (normalizedStackSlug) {
+      const stack = await db
+        .select({ id: technologies.id })
+        .from(technologies)
+        .where(eq(technologies.slug, normalizedStackSlug))
+        .limit(1)
+
+      if (stack.length === 0) {
+        return { ok: false, error: 'stack was not found' }
+      }
+    }
+
+    await db
+      .insert(digestSubscribers)
+      .values({
+        email: normalizedEmail,
+        stackSlug: normalizedStackSlug,
+        source: normalizedSource,
+      })
+      .onConflictDoUpdate({
+        target: digestSubscribers.email,
+        set: {
+          stackSlug: normalizedStackSlug,
+          source: normalizedSource,
+          updatedAt: new Date(),
+        },
+      })
+
+    return { ok: true }
+  } catch (err) {
+    console.error('subscribeToDigest failed:', err)
+    return { ok: false, error: 'could not save email' }
   }
 }
 

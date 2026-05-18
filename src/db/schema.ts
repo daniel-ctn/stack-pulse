@@ -61,6 +61,12 @@ export const releaseUpdates = pgTable(
     summary: text('summary'),
     newFeatures: jsonb('new_features').$type<string[]>(),
     breakingChanges: jsonb('breaking_changes').$type<string[]>(),
+    securityNotes: jsonb('security_notes').$type<string[]>(),
+    deprecations: jsonb('deprecations').$type<string[]>(),
+    migrationSteps: jsonb('migration_steps').$type<string[]>(),
+    impactSummary: text('impact_summary'),
+    recommendedAction: text('recommended_action'),
+    releaseSignals: jsonb('release_signals').$type<string[]>(),
     codeSnippet: text('code_snippet'),
     importanceLevel: importanceLevel('importance_level').default('medium'),
     summaryModel: text('summary_model'),
@@ -75,6 +81,7 @@ export const releaseUpdates = pgTable(
   (t) => [
     unique('release_updates_tech_version_unique').on(t.techId, t.version),
     index('release_updates_tech_published_idx').on(t.techId, sql`${t.publishedAt} DESC`),
+    index('release_updates_signals_idx').using('gin', t.releaseSignals),
   ],
 )
 
@@ -112,6 +119,22 @@ export const userReadReleases = pgTable(
     readAt: timestamp('read_at').notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.releaseId] })],
+)
+
+export const digestSubscribers = pgTable(
+  'digest_subscribers',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    email: text('email').notNull().unique(),
+    stackSlug: text('stack_slug'),
+    source: text('source').notNull().default('public'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('digest_subscribers_created_idx').on(sql`${t.createdAt} DESC`),
+    index('digest_subscribers_stack_idx').on(t.stackSlug),
+  ],
 )
 
 // BetterAuth tables

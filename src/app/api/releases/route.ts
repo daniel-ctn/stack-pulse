@@ -6,6 +6,7 @@ import {
   parseImportanceFilter,
   parseReadFilter,
   parseSearchFilter,
+  parseSignalFilter,
   parseTechFilter,
 } from '@/lib/release-feed-types'
 
@@ -19,6 +20,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const importance = parseImportanceFilter(url.searchParams.get('importance') ?? undefined)
   const read = parseReadFilter(url.searchParams.get('read') ?? undefined)
+  const signal = parseSignalFilter(url.searchParams.get('signal') ?? undefined)
   const tech = parseTechFilter(url.searchParams.get('tech') ?? undefined)
   const search = parseSearchFilter(url.searchParams.get('q') ?? undefined)
   const cursor = url.searchParams.get('cursor')
@@ -28,6 +30,7 @@ export async function GET(request: Request) {
     techIds,
     importance,
     read,
+    signal,
     tech,
     search,
     cursor,

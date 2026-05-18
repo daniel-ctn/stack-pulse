@@ -1,8 +1,17 @@
 export const importanceFilters = ['all', 'medium', 'high', 'critical'] as const
 export const readFilters = ['all', 'unread'] as const
+export const signalFilters = [
+  'all',
+  'breaking',
+  'deprecation',
+  'migration',
+  'feature',
+  'security',
+] as const
 
 export type ImportanceFilter = (typeof importanceFilters)[number]
 export type ReadFilter = (typeof readFilters)[number]
+export type SignalFilter = (typeof signalFilters)[number]
 
 export type ReleaseFeedTechOption = {
   id: string
@@ -17,6 +26,12 @@ export type ReleaseFeedItem = {
   summary: string | null
   newFeatures: string[] | null
   breakingChanges: string[] | null
+  securityNotes: string[] | null
+  deprecations: string[] | null
+  migrationSteps: string[] | null
+  impactSummary: string | null
+  recommendedAction: string | null
+  releaseSignals: string[] | null
   codeSnippet: string | null
   importanceLevel: string | null
   publishedAt: string | null
@@ -43,6 +58,11 @@ export function parseImportanceFilter(value: string | string[] | undefined): Imp
 export function parseReadFilter(value: string | string[] | undefined): ReadFilter {
   const raw = Array.isArray(value) ? value[0] : value
   return readFilters.includes(raw as ReadFilter) ? (raw as ReadFilter) : 'all'
+}
+
+export function parseSignalFilter(value: string | string[] | undefined): SignalFilter {
+  const raw = Array.isArray(value) ? value[0] : value
+  return signalFilters.includes(raw as SignalFilter) ? (raw as SignalFilter) : 'all'
 }
 
 export function parseTechFilter(value: string | string[] | undefined): string {

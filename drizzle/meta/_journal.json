@@ -22,6 +22,27 @@
       "when": 1779023072525,
       "tag": "0002_military_galactus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779106793127,
+      "tag": "0003_absurd_gunslinger",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779111233587,
+      "tag": "0004_even_cargill",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779111613875,
+      "tag": "0005_premium_mordo",
+      "breakpoints": true
     }
   ]
 }

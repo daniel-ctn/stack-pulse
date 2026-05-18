@@ -10,11 +10,13 @@ import { markReleaseUnread, markReleasesRead } from '@/lib/actions'
 import {
   importanceFilters,
   readFilters,
+  signalFilters,
   type ImportanceFilter,
   type ReadFilter,
   type ReleaseFeedItem,
   type ReleaseFeedPage,
   type ReleaseFeedTechOption,
+  type SignalFilter,
 } from '@/lib/release-feed-types'
 import { cn } from '@/lib/utils'
 
@@ -52,9 +54,27 @@ const filterLabels: Record<ImportanceFilter, string> = {
   critical: 'critical',
 }
 
+const signalLabels: Record<SignalFilter, string> = {
+  all: 'all',
+  breaking: 'breaking',
+  deprecation: 'deprecated',
+  migration: 'migration',
+  feature: 'features',
+  security: 'security',
+}
+
+const signalTone: Record<string, string> = {
+  breaking: 'border-rose/30 bg-rose/10 text-rose',
+  deprecation: 'border-amber/30 bg-amber/10 text-amber',
+  migration: 'border-cyan/30 bg-cyan/10 text-cyan',
+  feature: 'border-emerald/30 bg-emerald/10 text-emerald',
+  security: 'border-rose/30 bg-rose/10 text-rose',
+}
+
 export function ReleaseFeed({
   initialImportance,
   initialRead,
+  initialSignal,
   initialTech,
   initialSearch,
   initialPage,
@@ -62,6 +82,7 @@ export function ReleaseFeed({
 }: {
   initialImportance: ImportanceFilter
   initialRead: ReadFilter
+  initialSignal: SignalFilter
   initialTech: string
   initialSearch: string
   initialPage: ReleaseFeedPage
@@ -77,17 +98,22 @@ export function ReleaseFeed({
     'read',
     parseAsStringLiteral(readFilters).withDefault('all'),
   )
+  const [signal, setSignal] = useQueryState(
+    'signal',
+    parseAsStringLiteral(signalFilters).withDefault('all'),
+  )
   const [tech, setTech] = useQueryState('tech')
   const [search, setSearch] = useQueryState('q')
   const techFilter = tech || 'all'
   const searchFilter = search || ''
 
   const query = useInfiniteQuery({
-    queryKey: ['release-feed', importance, read, techFilter, searchFilter],
+    queryKey: ['release-feed', importance, read, signal, techFilter, searchFilter],
     queryFn: ({ pageParam }) =>
       fetchReleasePage({
         importance,
         read,
+        signal,
         tech: techFilter,
         search: searchFilter,
         cursor: pageParam,
@@ -97,6 +123,7 @@ export function ReleaseFeed({
     initialData:
       importance === initialImportance &&
       read === initialRead &&
+      signal === initialSignal &&
       techFilter === initialTech &&
       searchFilter === initialSearch
         ? {
@@ -113,9 +140,9 @@ export function ReleaseFeed({
   const rowCount = query.hasNextPage ? releases.length + 1 : releases.length
   const rowVirtualizer = useWindowVirtualizer({
     count: rowCount,
-    estimateSize: () => 360,
+    estimateSize: () => 460,
     overscan: 4,
-    getItemKey: (index) => releases[index]?.id ?? `loader-${importance}`,
+    getItemKey: (index) => releases[index]?.id ?? `loader-${importance}-${signal}`,
   })
   const virtualItems = rowVirtualizer.getVirtualItems()
   const lastVirtualItem = virtualItems[virtualItems.length - 1]
@@ -132,14 +159,15 @@ export function ReleaseFeed({
   }, [lastVirtualItem, releases.length, query])
 
   const breakingCount = releases.filter(
-    (release) => release.importanceLevel === 'critical' || release.importanceLevel === 'high',
+    (release) =>
+      hasReleaseSignal(release, 'breaking') ||
+      release.importanceLevel === 'critical' ||
+      release.importanceLevel === 'high',
+  ).length
+  const deprecationCount = releases.filter((release) =>
+    hasReleaseSignal(release, 'deprecation'),
   ).length
   const unreadCount = releases.filter((release) => !release.isRead).length
-  const today = new Date()
-  const todayCount = releases.filter((release) => {
-    if (!release.publishedAt) return false
-    return new Date(release.publishedAt).toDateString() === today.toDateString()
-  }).length
 
   const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['release-feed'] })
 
@@ -167,7 +195,7 @@ export function ReleaseFeed({
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-px bg-line border border-line rounded-md overflow-hidden">
         <Stat label="loaded" value={String(releases.length)} tone="ink" />
         <Stat label="unread" value={String(unreadCount)} tone="cyan" />
-        <Stat label="today" value={String(todayCount)} tone="lime" />
+        <Stat label="deprecated" value={String(deprecationCount)} tone="amber" />
         <Stat label="breaking" value={String(breakingCount)} tone="rose" />
       </div>
 
@@ -183,6 +211,19 @@ export function ReleaseFeed({
                   onClick={() => setImportance(filter)}
                 >
                   {filterLabels[filter]}
+                </SegmentButton>
+              ))}
+            </Segmented>
+
+            <span className="ml-0 text-fade tracking-[0.16em] uppercase sm:ml-2">signal</span>
+            <Segmented>
+              {signalFilters.map((filter) => (
+                <SegmentButton
+                  key={filter}
+                  active={signal === filter}
+                  onClick={() => setSignal(filter)}
+                >
+                  {signalLabels[filter]}
                 </SegmentButton>
               ))}
             </Segmented>
@@ -287,12 +328,14 @@ export function ReleaseFeed({
 async function fetchReleasePage({
   importance,
   read,
+  signal,
   tech,
   search,
   cursor,
 }: {
   importance: ImportanceFilter
   read: ReadFilter
+  signal: SignalFilter
   tech: string
   search: string
   cursor: string | null
@@ -300,6 +343,7 @@ async function fetchReleasePage({
   const params = new URLSearchParams()
   params.set('importance', importance)
   params.set('read', read)
+  params.set('signal', signal)
   params.set('tech', tech)
   if (search) params.set('q', search)
   if (cursor) params.set('cursor', cursor)
@@ -308,6 +352,10 @@ async function fetchReleasePage({
   if (!response.ok) throw new Error('Failed to load releases')
 
   return (await response.json()) as ReleaseFeedPage
+}
+
+function hasReleaseSignal(release: ReleaseFeedItem, signal: Exclude<SignalFilter, 'all'>) {
+  return Array.isArray(release.releaseSignals) && release.releaseSignals.includes(signal)
 }
 
 function ReleaseCard({
@@ -326,8 +374,19 @@ function ReleaseCard({
     release.breakingChanges &&
     Array.isArray(release.breakingChanges) &&
     release.breakingChanges.length > 0
+  const hasSecurityNotes =
+    release.securityNotes &&
+    Array.isArray(release.securityNotes) &&
+    release.securityNotes.length > 0
   const hasNewFeatures =
     release.newFeatures && Array.isArray(release.newFeatures) && release.newFeatures.length > 0
+  const hasDeprecations =
+    release.deprecations && Array.isArray(release.deprecations) && release.deprecations.length > 0
+  const hasMigrationSteps =
+    release.migrationSteps &&
+    Array.isArray(release.migrationSteps) &&
+    release.migrationSteps.length > 0
+  const visibleSignals = (release.releaseSignals ?? []).filter((signal) => signal in signalTone)
 
   return (
     <article className={`relative pl-10 animate-fade-up stagger-${Math.min(index + 1, 10)}`}>
@@ -348,6 +407,14 @@ function ReleaseCard({
           >
             {tone.label}
           </span>
+          {visibleSignals.map((signal) => (
+            <span
+              key={signal}
+              className={`inline-flex items-center rounded-[3px] border px-1.5 py-0.5 text-[9px] font-bold tracking-widest uppercase ${signalTone[signal]}`}
+            >
+              {signal}
+            </span>
+          ))}
           {release.publishedAt && (
             <span className="ml-auto text-fade">
               {new Date(release.publishedAt).toLocaleDateString('en-US', {
@@ -366,6 +433,36 @@ function ReleaseCard({
 
           {release.summary && (
             <p className="mt-2.5 text-[14px] text-dust leading-relaxed">{release.summary}</p>
+          )}
+
+          {(release.impactSummary || release.recommendedAction) && (
+            <div className="mt-5 rounded-md border border-line bg-void overflow-hidden">
+              <div className="px-3 py-2 border-b border-line font-mono text-[10px] text-fade">
+                impact
+              </div>
+              <div className="divide-y divide-line">
+                {release.impactSummary && (
+                  <div className="px-3 py-3">
+                    <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-cyan">
+                      affected
+                    </div>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-dust">
+                      {release.impactSummary}
+                    </p>
+                  </div>
+                )}
+                {release.recommendedAction && (
+                  <div className="px-3 py-3">
+                    <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-lime">
+                      action
+                    </div>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-dust">
+                      {release.recommendedAction}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {(release.isPrerelease || release.summaryModel || release.summarizedAt) && (
@@ -388,12 +485,14 @@ function ReleaseCard({
             </div>
           )}
 
-          {(hasBreaking || hasNewFeatures) && (
+          {(hasSecurityNotes || hasBreaking || hasDeprecations || hasNewFeatures) && (
             <div className="mt-5 rounded-md border border-line bg-void overflow-hidden">
               <div className="px-3 py-2 border-b border-line flex items-center justify-between font-mono text-[10px] text-fade">
                 <span>diff</span>
                 <span>
                   {(hasBreaking ? release.breakingChanges!.length : 0) +
+                    (hasSecurityNotes ? release.securityNotes!.length : 0) +
+                    (hasDeprecations ? release.deprecations!.length : 0) +
                     (hasNewFeatures ? release.newFeatures!.length : 0)}{' '}
                   changes
                 </span>
@@ -409,6 +508,26 @@ function ReleaseCard({
                       <span className="text-ink">{change}</span>
                     </div>
                   ))}
+                {hasSecurityNotes &&
+                  release.securityNotes!.map((note, j) => (
+                    <div
+                      key={`s-${j}`}
+                      className="px-3 py-1 bg-rose/[0.04] border-l-2 border-rose flex gap-3"
+                    >
+                      <span className="text-rose select-none shrink-0">!</span>
+                      <span className="text-ink">{note}</span>
+                    </div>
+                  ))}
+                {hasDeprecations &&
+                  release.deprecations!.map((deprecation, j) => (
+                    <div
+                      key={`d-${j}`}
+                      className="px-3 py-1 bg-amber/[0.04] border-l-2 border-amber flex gap-3"
+                    >
+                      <span className="text-amber select-none shrink-0">!</span>
+                      <span className="text-ink">{deprecation}</span>
+                    </div>
+                  ))}
                 {hasNewFeatures &&
                   release.newFeatures!.map((feature, j) => (
                     <div
@@ -420,6 +539,23 @@ function ReleaseCard({
                     </div>
                   ))}
               </div>
+            </div>
+          )}
+
+          {hasMigrationSteps && (
+            <div className="mt-5 rounded-md border border-line bg-void overflow-hidden">
+              <div className="px-3 py-2 border-b border-line flex items-center justify-between font-mono text-[10px] text-fade">
+                <span>migration_steps</span>
+                <span>{release.migrationSteps!.length} steps</span>
+              </div>
+              <ol className="font-mono text-[12.5px] leading-[1.7]">
+                {release.migrationSteps!.map((step, j) => (
+                  <li key={`m-${j}`} className="flex gap-3 px-3 py-1.5">
+                    <span className="select-none text-cyan">{String(j + 1).padStart(2, '0')}</span>
+                    <span className="text-ink">{step}</span>
+                  </li>
+                ))}
+              </ol>
             </div>
           )}
 
@@ -475,7 +611,7 @@ function Stat({
 }: {
   label: string
   value: string
-  tone: 'ink' | 'lime' | 'rose' | 'cyan'
+  tone: 'ink' | 'lime' | 'rose' | 'cyan' | 'amber'
 }) {
   const toneClass =
     tone === 'lime'
@@ -484,7 +620,9 @@ function Stat({
         ? 'text-rose'
         : tone === 'cyan'
           ? 'text-cyan'
-          : 'text-ink'
+          : tone === 'amber'
+            ? 'text-amber'
+            : 'text-ink'
   return (
     <div className="bg-shade px-4 py-3">
       <div className="font-mono text-[10px] text-fade tracking-[0.2em] uppercase">{label}</div>

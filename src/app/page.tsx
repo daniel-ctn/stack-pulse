@@ -17,6 +17,7 @@ import {
   Flag03Icon,
 } from 'hugeicons-react'
 import { Logo } from '@/components/logo'
+import { DigestSignupForm } from '@/components/landing/digest-signup-form'
 import { StackPulseHero } from '@/components/stack-pulse-hero'
 
 const steps = [
@@ -41,18 +42,18 @@ const steps = [
 ]
 
 const trackedStacks = [
-  { name: 'react', icon: ReactIcon },
-  { name: 'next', icon: SourceCodeIcon },
-  { name: 'tailwind', icon: TailwindcssIcon },
-  { name: 'shadcn', icon: ShadcnIcon },
-  { name: 'typescript', icon: Typescript03Icon },
-  { name: 'drizzle', icon: Database02Icon },
-  { name: 'remix', icon: ServerStack01Icon },
-  { name: 'astro', icon: RocketIcon },
-  { name: 'vite', icon: ZapIcon },
-  { name: 'bun', icon: Package01Icon },
-  { name: 'svelte', icon: Flag03Icon },
-  { name: 'solid', icon: Atom01Icon },
+  { name: 'react', slug: 'react', icon: ReactIcon },
+  { name: 'next', slug: 'nextjs', icon: SourceCodeIcon },
+  { name: 'tailwind', slug: 'tailwindcss', icon: TailwindcssIcon },
+  { name: 'shadcn', slug: 'shadcn-ui', icon: ShadcnIcon },
+  { name: 'typescript', slug: 'typescript', icon: Typescript03Icon },
+  { name: 'drizzle', slug: 'drizzle-orm', icon: Database02Icon },
+  { name: 'remix', slug: 'remix', icon: ServerStack01Icon },
+  { name: 'astro', slug: 'astro', icon: RocketIcon },
+  { name: 'vite', slug: 'vite', icon: ZapIcon },
+  { name: 'bun', slug: 'bun', icon: Package01Icon },
+  { name: 'svelte', slug: 'svelte', icon: Flag03Icon },
+  { name: 'solid', slug: 'solidjs', icon: Atom01Icon },
 ]
 
 const releaseSignals = [
@@ -168,6 +169,12 @@ export default async function LandingPage() {
         <nav className="flex items-center gap-2 font-mono text-[12px]">
           <span className="hidden sm:inline text-fade">v0.1.0</span>
           <span className="hidden sm:inline text-mute mx-2">·</span>
+          <Link
+            href="/stacks"
+            className="hidden text-dust transition-colors hover:text-lime sm:inline"
+          >
+            stacks
+          </Link>
           <Link
             href="/sign-in"
             className="inline-flex items-center gap-1.5 rounded-md border border-ruling bg-shade px-3 py-1.5 text-ink hover:border-edge hover:bg-lift transition-colors"
@@ -294,9 +301,10 @@ export default async function LandingPage() {
               <span className="ml-auto text-mute">+ {trackedStacks.length - 6} more</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-line">
-              {trackedStacks.map(({ name, icon: Icon }) => (
-                <div
+              {trackedStacks.map(({ name, slug, icon: Icon }) => (
+                <Link
                   key={name}
+                  href={`/stacks/${slug}`}
                   className="bg-shade hover:bg-lift transition-colors px-4 py-5 flex items-center gap-3 group"
                 >
                   <Icon
@@ -304,7 +312,7 @@ export default async function LandingPage() {
                     className="w-5 h-5 text-dust group-hover:text-lime transition-colors"
                   />
                   <span className="font-mono text-[13px] text-ink">{name}</span>
-                </div>
+                </Link>
               ))}
             </div>
             <div className="px-4 py-3 border-t border-line font-mono text-[11px] text-fade flex items-center justify-between">
@@ -337,6 +345,9 @@ export default async function LandingPage() {
               <span>./start</span>
               <span aria-hidden="true">→</span>
             </Link>
+            <div className="mx-auto mt-8 max-w-xl text-left">
+              <DigestSignupForm source="landing" />
+            </div>
           </div>
         </section>
 

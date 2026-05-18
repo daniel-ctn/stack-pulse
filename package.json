@@ -12,6 +12,7 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx --env-file=.env src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
+    "releases:backfill": "tsx --env-file=.env scripts/backfill-release-intelligence.ts",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

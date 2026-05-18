@@ -12,6 +12,7 @@ import {
   parseImportanceFilter,
   parseReadFilter,
   parseSearchFilter,
+  parseSignalFilter,
   parseTechFilter,
 } from '@/lib/release-feed-types'
 
@@ -29,6 +30,7 @@ export default async function DashboardPage({
   const params = await searchParams
   const importance = parseImportanceFilter(params?.importance)
   const read = parseReadFilter(params?.read)
+  const signal = parseSignalFilter(params?.signal)
   const tech = parseTechFilter(params?.tech)
   const search = parseSearchFilter(params?.q)
   const techIds = await getUserTechIds(session.user.id)
@@ -84,6 +86,7 @@ export default async function DashboardPage({
       techIds,
       importance,
       read,
+      signal,
       tech,
       search,
     }),
@@ -106,13 +109,15 @@ export default async function DashboardPage({
             your feed<span className="text-lime">.</span>
           </h1>
           <p className="mt-2 text-dust text-[14px]">
-            Latest releases across your stack — AI-summarized, scannable, sourced.
+            Latest releases across your stack — breaking changes, deprecations, upgrade notes, and
+            source links.
           </p>
         </div>
 
         <ReleaseFeed
           initialImportance={importance}
           initialRead={read}
+          initialSignal={signal}
           initialTech={tech}
           initialSearch={search}
           initialPage={initialPage}
