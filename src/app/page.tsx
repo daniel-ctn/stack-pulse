@@ -24,19 +24,19 @@ const steps = [
     n: '01',
     cmd: 'stack add <tool>',
     title: 'pick your stack',
-    body: 'Choose from React, Next.js, Tailwind, Drizzle, and 20+ other frameworks — or paste any GitHub repo URL to follow it.',
+    body: 'Choose from React, Next.js, Tailwind, Drizzle, and 20+ other frameworks, or paste any GitHub repo URL to follow it.',
   },
   {
     n: '02',
     cmd: 'pulse --watch',
     title: 'we watch the releases',
-    body: 'Every new GitHub release for your stack is fetched every 4 hours, parsed, and run through an AI summariser tuned for changelogs. No noise, no marketing copy.',
+    body: 'Every new GitHub release for your stack is fetched every 4 hours, parsed, and run through an AI summariser tuned for changelogs and migration notes.',
   },
   {
     n: '03',
     cmd: 'feed --read',
-    title: 'read one feed',
-    body: 'A scannable timeline of release notes across your entire stack. Breaking changes flagged, code snippets included, every entry links to the source release.',
+    title: 'review upgrade risk',
+    body: 'Read one feed with breaking changes, deprecations, new APIs, and source links called out before you update production dependencies.',
   },
 ]
 
@@ -55,6 +55,42 @@ const trackedStacks = [
   { name: 'solid', icon: Atom01Icon },
 ]
 
+const releaseSignals = [
+  {
+    label: 'breaking changes',
+    title: 'Find the release notes that can break production.',
+    body: 'StackPulse highlights risky changes from upstream changelogs so you can scan the impact before bumping a framework, package, or tool.',
+  },
+  {
+    label: 'deprecations',
+    title: 'Catch deprecated APIs before they disappear.',
+    body: 'Follow the libraries in your stack and surface removals, renamed options, and migration warnings in the same place as normal releases.',
+  },
+  {
+    label: 'upgrade notes',
+    title: 'Turn long changelogs into practical next steps.',
+    body: 'Each digest keeps the important context close: what changed, why it matters, and where to read the original release before changing code.',
+  },
+]
+
+const faqItems = [
+  {
+    question: 'What is StackPulse?',
+    answer:
+      'StackPulse is a free, open-source GitHub release tracker for developers. It watches the frameworks, libraries, and tools you choose, then turns release notes into AI-distilled digests.',
+  },
+  {
+    question: 'Can StackPulse track breaking changes and deprecations?',
+    answer:
+      'Yes. StackPulse summarizes upstream release notes and calls out breaking changes, deprecations, migration notes, new APIs, and source links when those signals are present.',
+  },
+  {
+    question: 'Which repositories can I follow?',
+    answer:
+      'You can start with common stacks like React, Next.js, Tailwind, Drizzle, Astro, Bun, Svelte, and Vite, or add any public GitHub repository.',
+  },
+]
+
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 const jsonLd = {
@@ -63,10 +99,18 @@ const jsonLd = {
   name: 'StackPulse',
   url: appUrl,
   description:
-    'Track GitHub releases for React, Next.js, Tailwind, Drizzle, and any other library. AI-summarised changelogs with breaking changes flagged, new features highlighted, and code snippets included.',
+    'Track GitHub releases for React, Next.js, Tailwind, Drizzle, and any other library. AI-summarised changelogs with breaking changes, deprecations, migration notes, and source links.',
   applicationCategory: 'DeveloperApplication',
   operatingSystem: 'Web',
   browserRequirements: 'Requires modern browser with JavaScript enabled',
+  keywords:
+    'GitHub release tracker, breaking changes, deprecation tracker, upgrade notes, changelog summary, framework releases',
+  featureList: [
+    'Track public GitHub releases for selected repositories',
+    'Summarise changelogs with AI',
+    'Highlight breaking changes and deprecations',
+    'Link every digest back to the source release',
+  ],
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -84,6 +128,19 @@ const jsonLd = {
   image: `${appUrl}/opengraph-image`,
 }
 
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.answer,
+    },
+  })),
+}
+
 export const dynamic = 'force-dynamic'
 
 export default async function LandingPage() {
@@ -98,6 +155,10 @@ export default async function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
       <header className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between relative z-20 border-b border-line/60">
@@ -120,8 +181,54 @@ export default async function LandingPage() {
       <main className="relative z-10">
         <StackPulseHero />
 
-        {/* How it works */}
+        {/* Release signals */}
         <div className="mx-auto max-w-7xl px-6 mt-16 sm:mt-24">
+          <div className="flex items-center gap-4">
+            <h2 className="font-mono text-[11px] text-fade tracking-[0.25em] uppercase">
+              §&nbsp;release_intelligence
+            </h2>
+            <div className="h-px flex-1 bg-line" />
+            <span className="font-mono text-[11px] text-mute">source-backed</span>
+          </div>
+        </div>
+
+        <section
+          aria-labelledby="release-intelligence"
+          className="mx-auto max-w-7xl px-6 pt-10 pb-8"
+        >
+          <div className="max-w-3xl">
+            <h2
+              id="release-intelligence"
+              className="font-mono text-2xl sm:text-4xl font-bold tracking-tight text-ink"
+            >
+              Release notes are easy to miss. Breaking changes are not.
+            </h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-dust">
+              StackPulse is built for developers who need to know when a framework release,
+              dependency update, or package changelog contains work that can affect production code.
+            </p>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-px bg-line border border-line rounded-lg overflow-hidden">
+            {releaseSignals.map((signal) => (
+              <article
+                key={signal.label}
+                className="bg-shade p-7 lg:p-8 hover:bg-lift transition-colors"
+              >
+                <p className="font-mono text-[11px] text-lime tracking-[0.18em] uppercase">
+                  {signal.label}
+                </p>
+                <h3 className="mt-5 font-mono text-[19px] font-semibold tracking-tight text-ink">
+                  {signal.title}
+                </h3>
+                <p className="mt-3 text-[14px] text-dust leading-relaxed">{signal.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* How it works */}
+        <div className="mx-auto max-w-7xl px-6 mt-16">
           <div className="flex items-center gap-4">
             <h2 className="font-mono text-[11px] text-fade tracking-[0.25em] uppercase">
               §&nbsp;how_it_works
@@ -216,11 +323,11 @@ export default async function LandingPage() {
               ready?
             </div>
             <h2 className="font-mono text-3xl sm:text-5xl font-bold tracking-tight text-ink">
-              stop scrolling release notes.
+              stop missing upgrade work.
             </h2>
             <p className="mt-3 text-dust">
-              Free, open-source, no paywall. Sign in with GitHub and you&apos;re tracking releases
-              in under a minute.
+              Free, open-source, no paywall. Sign in with GitHub and start tracking framework
+              releases, breaking changes, and deprecation notes in under a minute.
             </p>
             <Link
               href="/sign-in"
@@ -230,6 +337,28 @@ export default async function LandingPage() {
               <span>./start</span>
               <span aria-hidden="true">→</span>
             </Link>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="mx-auto max-w-7xl px-6 pb-24" aria-labelledby="faq">
+          <div className="flex items-center gap-4">
+            <h2 id="faq" className="font-mono text-[11px] text-fade tracking-[0.25em] uppercase">
+              §&nbsp;faq
+            </h2>
+            <div className="h-px flex-1 bg-line" />
+            <span className="font-mono text-[11px] text-mute">searchable answers</span>
+          </div>
+
+          <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-line bg-line">
+            {faqItems.map((item) => (
+              <article key={item.question} className="bg-shade p-6 sm:p-7">
+                <h3 className="font-mono text-[16px] font-semibold text-ink">{item.question}</h3>
+                <p className="mt-3 max-w-3xl text-[14px] leading-relaxed text-dust">
+                  {item.answer}
+                </p>
+              </article>
+            ))}
           </div>
         </section>
 

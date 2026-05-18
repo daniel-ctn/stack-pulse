@@ -13,9 +13,27 @@ const stackLines: { kw: string; name: string; ver: string }[] = [
 ]
 
 const feedItems = [
-  { tag: 'react', ver: 'v19.2.0', label: 'NEW', tone: 'emerald' as const, msg: 'useEffectEvent ships stable' },
-  { tag: 'next', ver: 'v16.2.6', label: 'BREAKING', tone: 'rose' as const, msg: 'fetch cache defaults flipped' },
-  { tag: 'tailwind', ver: 'v4.0.0', label: 'MAJOR', tone: 'amber' as const, msg: 'CSS-first config engine' },
+  {
+    tag: 'react',
+    ver: 'v19.2.0',
+    label: 'NEW',
+    tone: 'emerald' as const,
+    msg: 'stable API notes extracted',
+  },
+  {
+    tag: 'next',
+    ver: 'v16.2.6',
+    label: 'BREAKING',
+    tone: 'rose' as const,
+    msg: 'migration impact highlighted',
+  },
+  {
+    tag: 'tailwind',
+    ver: 'v4.0.0',
+    label: 'UPGRADE',
+    tone: 'amber' as const,
+    msg: 'config changes summarized',
+  },
 ]
 
 const toneClasses: Record<'emerald' | 'rose' | 'amber', string> = {
@@ -42,9 +60,9 @@ export function StackPulseHero() {
           <span className="text-lime">live</span>
         </span>
         <span className="text-mute">·</span>
-        <span>watching 142 repos</span>
+        <span>watching framework releases</span>
         <span className="text-mute">·</span>
-        <span>summarizing in real time</span>
+        <span>flagging upgrade risk</span>
       </motion.div>
 
       <div className="mt-7 grid gap-12 lg:grid-cols-[1.05fr_1fr] lg:items-center">
@@ -58,9 +76,9 @@ export function StackPulseHero() {
           >
             <span className="text-fade">{'/* '}</span>
             <br className="hidden sm:block" />
-            Every release.
+            Track releases.
             <br />
-            <span className="text-lime">One feed.</span>
+            <span className="text-lime">Catch breaks.</span>
             <br />
             <span className="text-fade">{' */'}</span>
           </motion.h1>
@@ -71,9 +89,9 @@ export function StackPulseHero() {
             transition={{ duration: 0.5, delay: 0.15 }}
             className="mt-7 max-w-md text-[15px] leading-relaxed text-dust"
           >
-            Track GitHub releases for the libraries you ship with. StackPulse turns every
-            changelog into a scannable AI digest — breaking changes flagged, new APIs
-            highlighted, code snippets included.
+            Track GitHub releases for the libraries you ship with. StackPulse turns noisy changelogs
+            into scannable AI digests with breaking changes, deprecations, migration notes, and
+            source links.
           </motion.p>
 
           <motion.div
@@ -107,13 +125,13 @@ export function StackPulseHero() {
             className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-1.5 font-mono text-[11px] text-fade"
           >
             <span className="inline-flex items-center gap-1.5">
-              <span className="text-emerald">✓</span> no email spam
+              <span className="text-emerald">✓</span> source-linked
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="text-emerald">✓</span> ai-distilled
+              <span className="text-emerald">✓</span> breaking changes
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="text-emerald">✓</span> free to start
+              <span className="text-emerald">✓</span> upgrade notes
             </span>
           </motion.div>
         </div>
@@ -190,7 +208,7 @@ export function StackPulseHero() {
             <div className="frame shadow-[0_30px_60px_-30px_rgba(0,0,0,0.7)]">
               <div className="frame-titlebar">
                 <span className="text-lime">●</span>
-                <span className="text-dust">today&apos;s digest</span>
+                <span className="text-dust">upgrade digest</span>
                 <span className="ml-auto text-mute">{feedItems.length} new</span>
               </div>
               <div className="p-3 space-y-2.5">
@@ -202,7 +220,9 @@ export function StackPulseHero() {
                     transition={{ delay: 1.1 + i * 0.12 }}
                     className="flex items-start gap-2 font-mono text-[11px]"
                   >
-                    <span className={`inline-flex shrink-0 items-center rounded-[3px] border px-1.5 py-0.5 text-[9px] font-semibold tracking-wider uppercase ${toneClasses[it.tone]}`}>
+                    <span
+                      className={`inline-flex shrink-0 items-center rounded-[3px] border px-1.5 py-0.5 text-[9px] font-semibold tracking-wider uppercase ${toneClasses[it.tone]}`}
+                    >
                       {it.label}
                     </span>
                     <div className="min-w-0">

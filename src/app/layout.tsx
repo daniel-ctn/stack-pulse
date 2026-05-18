@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 })
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-const title = 'StackPulse — AI-summarised GitHub releases for the libraries you ship with'
+const title = 'StackPulse - GitHub release tracker for breaking changes and upgrade notes'
 const description =
-  'Track GitHub releases for React, Next.js, Tailwind, Drizzle, and any other library. StackPulse turns every changelog into a scannable AI digest — breaking changes flagged, new features highlighted, code snippets included.'
+  'Track GitHub releases for React, Next.js, Tailwind, Drizzle, and any library you ship with. StackPulse turns changelogs into AI-distilled digests with breaking changes, deprecations, migration notes, and source links.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
@@ -34,15 +34,20 @@ export const metadata: Metadata = {
     'github release tracker',
     'changelog summary',
     'ai changelog',
+    'ai release notes',
     'release notes',
     'dependency updates',
     'library updates',
     'framework releases',
     'breaking changes',
+    'deprecation tracker',
+    'upgrade checklist',
+    'migration guide',
     'developer tools',
     'open source release notes',
     'react release notes',
     'next.js release notes',
+    'tailwind release notes',
     'package updates',
   ],
   authors: [{ name: 'Daniel', url: 'https://github.com/daniel-ctn' }],
