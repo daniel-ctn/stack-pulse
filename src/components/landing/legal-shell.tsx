@@ -45,13 +45,21 @@ export function LegalShell({
       <footer className="border-t border-line mt-16">
         <div className="mx-auto max-w-3xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px] text-fade">
           <Logo size="sm" />
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             <Link href="/privacy" className="hover:text-ink transition-colors">
               privacy
             </Link>
             <Link href="/terms" className="hover:text-ink transition-colors">
               terms
             </Link>
+            <a
+              href="https://daniel-tsx.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink transition-colors"
+            >
+              portfolio ↗
+            </a>
             <a
               href="https://github.com/daniel-ctn/stack-pulse"
               target="_blank"
