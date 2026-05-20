@@ -53,14 +53,6 @@ export function LegalShell({
               terms
             </Link>
             <a
-              href="https://daniel-tsx.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-ink transition-colors"
-            >
-              portfolio ↗
-            </a>
-            <a
               href="https://github.com/daniel-ctn/stack-pulse"
               target="_blank"
               rel="noopener noreferrer"
