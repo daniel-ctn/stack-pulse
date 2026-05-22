@@ -79,6 +79,7 @@ export function ReleaseFeed({
   initialSearch,
   initialPage,
   techOptions,
+  canManageReadState,
 }: {
   initialImportance: ImportanceFilter
   initialRead: ReadFilter
@@ -87,6 +88,7 @@ export function ReleaseFeed({
   initialSearch: string
   initialPage: ReleaseFeedPage
   techOptions: ReleaseFeedTechOption[]
+  canManageReadState: boolean
 }) {
   const queryClient = useQueryClient()
   const [isMarking, startMarking] = useTransition()
@@ -106,13 +108,14 @@ export function ReleaseFeed({
   const [search, setSearch] = useQueryState('q')
   const techFilter = tech || 'all'
   const searchFilter = search || ''
+  const effectiveRead = canManageReadState ? read : 'all'
 
   const query = useInfiniteQuery({
-    queryKey: ['release-feed', importance, read, signal, techFilter, searchFilter],
+    queryKey: ['release-feed', importance, effectiveRead, signal, techFilter, searchFilter],
     queryFn: ({ pageParam }) =>
       fetchReleasePage({
         importance,
-        read,
+        read: effectiveRead,
         signal,
         tech: techFilter,
         search: searchFilter,
@@ -122,7 +125,7 @@ export function ReleaseFeed({
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialData:
       importance === initialImportance &&
-      read === initialRead &&
+      effectiveRead === initialRead &&
       signal === initialSignal &&
       techFilter === initialTech &&
       searchFilter === initialSearch
@@ -168,6 +171,7 @@ export function ReleaseFeed({
     hasReleaseSignal(release, 'deprecation'),
   ).length
   const unreadCount = releases.filter((release) => !release.isRead).length
+  const techCount = new Set(releases.map((release) => release.techSlug)).size
 
   const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['release-feed'] })
 
@@ -194,7 +198,11 @@ export function ReleaseFeed({
     <>
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-px bg-line border border-line rounded-md overflow-hidden">
         <Stat label="loaded" value={String(releases.length)} tone="ink" />
-        <Stat label="unread" value={String(unreadCount)} tone="cyan" />
+        <Stat
+          label={canManageReadState ? 'unread' : 'stacks'}
+          value={String(canManageReadState ? unreadCount : techCount)}
+          tone="cyan"
+        />
         <Stat label="deprecated" value={String(deprecationCount)} tone="amber" />
         <Stat label="breaking" value={String(breakingCount)} tone="rose" />
       </div>
@@ -228,28 +236,34 @@ export function ReleaseFeed({
               ))}
             </Segmented>
 
-            <span className="ml-0 text-fade tracking-[0.16em] uppercase sm:ml-2">status</span>
-            <Segmented>
-              {readFilters.map((filter) => (
-                <SegmentButton
-                  key={filter}
-                  active={read === filter}
-                  onClick={() => setRead(filter)}
-                >
-                  {filter}
-                </SegmentButton>
-              ))}
-            </Segmented>
+            {canManageReadState && (
+              <>
+                <span className="ml-0 text-fade tracking-[0.16em] uppercase sm:ml-2">status</span>
+                <Segmented>
+                  {readFilters.map((filter) => (
+                    <SegmentButton
+                      key={filter}
+                      active={read === filter}
+                      onClick={() => setRead(filter)}
+                    >
+                      {filter}
+                    </SegmentButton>
+                  ))}
+                </Segmented>
+              </>
+            )}
           </div>
 
-          <button
-            type="button"
-            onClick={handleMarkVisibleRead}
-            disabled={isMarking || unreadCount === 0}
-            className="justify-self-start rounded-md border border-ruling bg-shade px-3 py-1.5 font-mono text-[11px] text-dust transition-colors hover:border-lime hover:text-lime disabled:opacity-50 lg:justify-self-end"
-          >
-            mark visible read
-          </button>
+          {canManageReadState && (
+            <button
+              type="button"
+              onClick={handleMarkVisibleRead}
+              disabled={isMarking || unreadCount === 0}
+              className="justify-self-start rounded-md border border-ruling bg-shade px-3 py-1.5 font-mono text-[11px] text-dust transition-colors hover:border-lime hover:text-lime disabled:opacity-50 lg:justify-self-end"
+            >
+              mark visible read
+            </button>
+          )}
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[190px_1fr]">
@@ -311,6 +325,7 @@ export function ReleaseFeed({
                       index={virtualItem.index}
                       onToggleRead={handleToggleRead}
                       isMarking={isMarking}
+                      canManageReadState={canManageReadState}
                     />
                   ) : (
                     <FeedStatus label="loading more..." compact />
@@ -363,11 +378,13 @@ function ReleaseCard({
   index,
   onToggleRead,
   isMarking,
+  canManageReadState,
 }: {
   release: ReleaseFeedItem
   index: number
   onToggleRead: (release: ReleaseFeedItem) => void
   isMarking: boolean
+  canManageReadState: boolean
 }) {
   const tone = importanceTone[release.importanceLevel || 'medium'] || importanceTone.medium
   const hasBreaking =
@@ -583,19 +600,21 @@ function ReleaseCard({
                 view source on github
                 <span className="text-mute">↗</span>
               </a>
-              <button
-                type="button"
-                onClick={() => onToggleRead(release)}
-                disabled={isMarking}
-                className={cn(
-                  'rounded-md border px-2.5 py-1.5 font-mono text-[11px] transition-colors disabled:opacity-50',
-                  release.isRead
-                    ? 'border-ruling text-fade hover:border-cyan hover:text-cyan'
-                    : 'border-lime/30 bg-lime-dim text-lime hover:bg-lime/15',
-                )}
-              >
-                {release.isRead ? 'mark unread' : 'mark read'}
-              </button>
+              {canManageReadState && (
+                <button
+                  type="button"
+                  onClick={() => onToggleRead(release)}
+                  disabled={isMarking}
+                  className={cn(
+                    'rounded-md border px-2.5 py-1.5 font-mono text-[11px] transition-colors disabled:opacity-50',
+                    release.isRead
+                      ? 'border-ruling text-fade hover:border-cyan hover:text-cyan'
+                      : 'border-lime/30 bg-lime-dim text-lime hover:bg-lime/15',
+                  )}
+                >
+                  {release.isRead ? 'mark unread' : 'mark read'}
+                </button>
+              )}
             </div>
           )}
         </div>

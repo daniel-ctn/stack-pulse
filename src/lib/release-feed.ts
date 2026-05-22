@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, desc, eq, ilike, inArray, isNull, lt, or, sql, type SQL } from 'drizzle-orm'
 
 import { getDb } from '@/db'
 import { releaseUpdates, technologies, userReadReleases, userTechPreferences } from '@/db/schema'
@@ -11,6 +11,8 @@ import type {
 } from '@/lib/release-feed-types'
 
 export const RELEASE_FEED_PAGE_SIZE = 30
+
+type ReleaseFeedScope = { type: 'public' } | { type: 'user'; userId: string; techIds: string[] }
 
 type FeedCursor = {
   publishedAt: string
@@ -47,9 +49,19 @@ export async function getUserTechOptions(userId: string): Promise<ReleaseFeedTec
     .orderBy(technologies.name)
 }
 
+export async function getAllTechOptions(): Promise<ReleaseFeedTechOption[]> {
+  return getDb()
+    .select({
+      id: technologies.id,
+      name: technologies.name,
+      slug: technologies.slug,
+    })
+    .from(technologies)
+    .orderBy(technologies.name)
+}
+
 export async function getReleaseFeedPage({
-  userId,
-  techIds,
+  scope,
   importance,
   read,
   signal,
@@ -58,8 +70,7 @@ export async function getReleaseFeedPage({
   cursor,
   limit = RELEASE_FEED_PAGE_SIZE,
 }: {
-  userId: string
-  techIds: string[]
+  scope: ReleaseFeedScope
   importance: ImportanceFilter
   read: ReadFilter
   signal: SignalFilter
@@ -68,19 +79,24 @@ export async function getReleaseFeedPage({
   cursor?: string | null
   limit?: number
 }): Promise<ReleaseFeedPage> {
-  if (techIds.length === 0) {
+  if (scope.type === 'user' && scope.techIds.length === 0) {
     return { items: [], nextCursor: null }
   }
 
+  const userId = scope.type === 'user' ? scope.userId : null
   const levels = filterLevels[importance]
   const cursorValue = parseCursor(cursor)
-  const conditions = [inArray(releaseUpdates.techId, techIds)]
+  const conditions: SQL[] = []
+
+  if (scope.type === 'user') {
+    conditions.push(inArray(releaseUpdates.techId, scope.techIds))
+  }
 
   if (levels) {
     conditions.push(inArray(releaseUpdates.importanceLevel, levels))
   }
 
-  if (read === 'unread') {
+  if (read === 'unread' && userId) {
     conditions.push(isNull(userReadReleases.releaseId))
   }
 
@@ -149,9 +165,12 @@ export async function getReleaseFeedPage({
     .innerJoin(technologies, eq(releaseUpdates.techId, technologies.id))
     .leftJoin(
       userReadReleases,
-      and(eq(userReadReleases.releaseId, releaseUpdates.id), eq(userReadReleases.userId, userId)),
+      and(
+        eq(userReadReleases.releaseId, releaseUpdates.id),
+        eq(userReadReleases.userId, userId ?? '__public__'),
+      ),
     )
-    .where(and(...conditions))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(releaseUpdates.publishedAt), desc(releaseUpdates.id))
     .limit(limit + 1)
 

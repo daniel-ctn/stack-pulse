@@ -108,6 +108,13 @@ export function StackPulseHero() {
               <span>start tracking</span>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity">↵</span>
             </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-md border border-ruling bg-shade px-4 py-2.5 font-medium text-ink hover:border-edge hover:bg-lift transition-colors"
+            >
+              <span className="text-fade">--public</span>
+              <span>browse feed</span>
+            </Link>
             <a
               href="https://github.com/daniel-ctn/stack-pulse"
               target="_blank"

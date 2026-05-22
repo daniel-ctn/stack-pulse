@@ -13,21 +13,18 @@ import {
 export async function GET(request: Request) {
   const session = await getAuth().api.getSession({ headers: request.headers })
 
-  if (!session) {
-    return NextResponse.json({ error: 'not signed in' }, { status: 401 })
-  }
-
   const url = new URL(request.url)
   const importance = parseImportanceFilter(url.searchParams.get('importance') ?? undefined)
-  const read = parseReadFilter(url.searchParams.get('read') ?? undefined)
+  const read = session ? parseReadFilter(url.searchParams.get('read') ?? undefined) : 'all'
   const signal = parseSignalFilter(url.searchParams.get('signal') ?? undefined)
   const tech = parseTechFilter(url.searchParams.get('tech') ?? undefined)
   const search = parseSearchFilter(url.searchParams.get('q') ?? undefined)
   const cursor = url.searchParams.get('cursor')
-  const techIds = await getUserTechIds(session.user.id)
+  const techIds = session ? await getUserTechIds(session.user.id) : null
   const page = await getReleaseFeedPage({
-    userId: session.user.id,
-    techIds,
+    scope: session
+      ? { type: 'user', userId: session.user.id, techIds: techIds ?? [] }
+      : { type: 'public' },
     importance,
     read,
     signal,

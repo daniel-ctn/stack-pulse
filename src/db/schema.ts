@@ -81,6 +81,7 @@ export const releaseUpdates = pgTable(
   (t) => [
     unique('release_updates_tech_version_unique').on(t.techId, t.version),
     index('release_updates_tech_published_idx').on(t.techId, sql`${t.publishedAt} DESC`),
+    index('release_updates_published_idx').on(sql`${t.publishedAt} DESC`, sql`${t.id} DESC`),
     index('release_updates_signals_idx').using('gin', t.releaseSignals),
   ],
 )

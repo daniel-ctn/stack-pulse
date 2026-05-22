@@ -43,6 +43,13 @@
       "when": 1779111613875,
       "tag": "0005_premium_mordo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779440300592,
+      "tag": "0006_giant_cerise",
+      "breakpoints": true
     }
   ]
 }

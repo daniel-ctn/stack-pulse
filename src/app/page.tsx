@@ -176,6 +176,12 @@ export default async function LandingPage() {
             stacks
           </Link>
           <Link
+            href="/dashboard"
+            className="hidden text-dust transition-colors hover:text-lime sm:inline"
+          >
+            public feed
+          </Link>
+          <Link
             href="/sign-in"
             className="inline-flex items-center gap-1.5 rounded-md border border-ruling bg-shade px-3 py-1.5 text-ink hover:border-edge hover:bg-lift transition-colors"
           >
@@ -338,12 +344,19 @@ export default async function LandingPage() {
               releases, breaking changes, and deprecation notes in under a minute.
             </p>
             <Link
-              href="/sign-in"
+              href="/dashboard"
               className="mt-7 inline-flex items-center gap-2 rounded-md bg-lime px-5 py-3 font-mono text-[13px] font-semibold text-void hover:bg-lime/85 transition-colors"
             >
               <span className="text-void/60">$</span>
-              <span>./start</span>
+              <span>./browse-public-feed</span>
               <span aria-hidden="true">→</span>
+            </Link>
+            <Link
+              href="/sign-in"
+              className="ml-0 mt-3 inline-flex items-center gap-2 rounded-md border border-ruling bg-shade px-5 py-3 font-mono text-[13px] font-semibold text-ink hover:border-edge hover:bg-lift transition-colors sm:ml-3"
+            >
+              <span className="text-lime">$</span>
+              <span>./track-my-stack</span>
             </Link>
             <div className="mx-auto mt-8 max-w-xl text-left">
               <DigestSignupForm source="landing" />

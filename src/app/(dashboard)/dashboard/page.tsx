@@ -1,13 +1,17 @@
 import { headers } from 'next/headers'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { ZapIcon } from 'hugeicons-react'
 
 import { Logo } from '@/components/logo'
 import { ReleaseFeed } from '@/components/dashboard/release-feed'
 import { UserMenu } from '@/components/dashboard/user-menu'
 import { getAuth } from '@/lib/auth'
-import { getReleaseFeedPage, getUserTechIds, getUserTechOptions } from '@/lib/release-feed'
+import {
+  getAllTechOptions,
+  getReleaseFeedPage,
+  getUserTechIds,
+  getUserTechOptions,
+} from '@/lib/release-feed'
 import {
   parseImportanceFilter,
   parseReadFilter,
@@ -25,17 +29,15 @@ export default async function DashboardPage({
     headers: await headers(),
   })
 
-  if (!session) redirect('/sign-in')
-
   const params = await searchParams
   const importance = parseImportanceFilter(params?.importance)
-  const read = parseReadFilter(params?.read)
+  const read = session ? parseReadFilter(params?.read) : 'all'
   const signal = parseSignalFilter(params?.signal)
   const tech = parseTechFilter(params?.tech)
   const search = parseSearchFilter(params?.q)
-  const techIds = await getUserTechIds(session.user.id)
+  const techIds = session ? await getUserTechIds(session.user.id) : null
 
-  if (techIds.length === 0) {
+  if (session && techIds?.length === 0) {
     return (
       <div className="flex-1">
         <DashHeader email={session.user.email} />
@@ -82,20 +84,21 @@ export default async function DashboardPage({
 
   const [initialPage, techOptions] = await Promise.all([
     getReleaseFeedPage({
-      userId: session.user.id,
-      techIds,
+      scope: session
+        ? { type: 'user', userId: session.user.id, techIds: techIds ?? [] }
+        : { type: 'public' },
       importance,
       read,
       signal,
       tech,
       search,
     }),
-    getUserTechOptions(session.user.id),
+    session ? getUserTechOptions(session.user.id) : getAllTechOptions(),
   ])
 
   return (
     <div className="flex-1">
-      <DashHeader email={session.user.email} />
+      <DashHeader email={session?.user.email ?? null} />
 
       <main className="mx-auto max-w-4xl px-6 py-12 relative z-10">
         <div className="animate-fade-up">
@@ -103,14 +106,16 @@ export default async function DashboardPage({
             <span className="text-lime">§</span>
             <span>feed</span>
             <span className="text-mute">/</span>
-            <span>today</span>
+            <span>{session ? 'today' : 'public'}</span>
           </div>
           <h1 className="mt-3 font-mono text-3xl sm:text-[40px] font-bold tracking-tight text-ink lowercase">
-            your feed<span className="text-lime">.</span>
+            {session ? 'your feed' : 'public feed'}
+            <span className="text-lime">.</span>
           </h1>
           <p className="mt-2 text-dust text-[14px]">
-            Latest releases across your stack — breaking changes, deprecations, upgrade notes, and
-            source links.
+            {session
+              ? 'Latest releases across your stack — breaking changes, deprecations, upgrade notes, and source links.'
+              : 'Latest indexed releases across every tracked stack — no account required.'}
           </p>
         </div>
 
@@ -122,13 +127,14 @@ export default async function DashboardPage({
           initialSearch={search}
           initialPage={initialPage}
           techOptions={techOptions}
+          canManageReadState={!!session}
         />
       </main>
     </div>
   )
 }
 
-function DashHeader({ email }: { email: string }) {
+function DashHeader({ email }: { email: string | null }) {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-void/80 backdrop-blur">
       <div className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between">
@@ -142,11 +148,19 @@ function DashHeader({ email }: { email: string }) {
           <span className="text-lime">feed</span>
         </div>
         <div className="flex items-center gap-3 font-mono text-[11px]">
-          <Link href="/onboarding" className="text-dust hover:text-lime transition-colors">
-            edit stack
-          </Link>
-          <span className="text-mute">·</span>
-          <UserMenu email={email} />
+          {email ? (
+            <>
+              <Link href="/onboarding" className="text-dust hover:text-lime transition-colors">
+                edit stack
+              </Link>
+              <span className="text-mute">·</span>
+              <UserMenu email={email} />
+            </>
+          ) : (
+            <Link href="/sign-in" className="text-dust hover:text-lime transition-colors">
+              sign in to track your stack
+            </Link>
+          )}
         </div>
       </div>
     </header>
