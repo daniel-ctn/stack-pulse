@@ -21,30 +21,31 @@ export default async function OpengraphImage() {
     >
       {/* Top-left logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <div
-          style={{
-            width: '40px',
-            height: '40px',
-            background: '#0d0d10',
-            border: '1px solid #26262e',
-            borderRadius: '8px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            padding: '0 8px',
-            gap: '4px',
-          }}
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 32 32"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <div
-            style={{ width: '14px', height: '4px', background: '#a3e635', borderRadius: '2px' }}
+          <rect width="32" height="32" rx="6" fill="#0d0d10" />
+          <path
+            d="M 9 9.5 L 14.5 16 L 9 22.5"
+            fill="none"
+            stroke="#a3e635"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
-          <div
-            style={{ width: '22px', height: '4px', background: '#9b9ba1', borderRadius: '2px' }}
+          <path
+            d="M 16.5 16 L 19.5 16 L 21 10 L 22.5 16 L 25 16"
+            fill="none"
+            stroke="#a3e635"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
-          <div
-            style={{ width: '18px', height: '4px', background: '#5a5a62', borderRadius: '2px' }}
-          />
-        </div>
+          <circle cx="25" cy="16" r="2" fill="#a3e635" />
+        </svg>
         <div style={{ display: 'flex', fontSize: '24px', fontWeight: 600 }}>
           <span>stack</span>
           <span style={{ color: '#a3e635' }}>.</span>
