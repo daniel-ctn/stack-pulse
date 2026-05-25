@@ -677,25 +677,32 @@ function ReleaseAdvicePanel({ release, isOpen }: { release: ReleaseFeedItem; isO
     setError(null)
 
     startTransition(async () => {
-      const response = await fetch('/api/release-advice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          releaseId: release.id,
-          question,
-          currentVersion,
-          projectContext,
-        }),
-      })
-      const body = (await response.json()) as { advice?: ReleaseAdvice; error?: string }
+      try {
+        const response = await fetch('/api/release-advice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            releaseId: release.id,
+            question,
+            currentVersion,
+            projectContext,
+          }),
+        })
+        const body = response.headers.get('content-type')?.includes('application/json')
+          ? ((await response.json()) as { advice?: ReleaseAdvice; error?: string })
+          : null
 
-      if (!response.ok || !body.advice) {
+        if (!response.ok || !body?.advice) {
+          setAdvice(null)
+          setError(body?.error || 'could not generate advice')
+          return
+        }
+
+        setAdvice(body.advice)
+      } catch {
         setAdvice(null)
-        setError(body.error || 'could not generate advice')
-        return
+        setError('could not reach ai reviewer')
       }
-
-      setAdvice(body.advice)
     })
   }
 
@@ -704,7 +711,9 @@ function ReleaseAdvicePanel({ release, isOpen }: { release: ReleaseFeedItem; isO
       <div className="px-3 py-2 border-b border-line flex items-center gap-2 font-mono text-[10px] text-cyan">
         <AiChat02Icon className="h-3.5 w-3.5" />
         <span>ai_upgrade_review</span>
-        <span className="ml-auto text-fade">{release.techSlug}@{release.version}</span>
+        <span className="ml-auto text-fade">
+          {release.techSlug}@{release.version}
+        </span>
       </div>
 
       <form onSubmit={submitQuestion} className="p-3">
@@ -742,6 +751,9 @@ function ReleaseAdvicePanel({ release, isOpen }: { release: ReleaseFeedItem; isO
             className="h-9 rounded-md border border-line bg-shade px-3 font-mono text-[12px] text-dust placeholder:text-fade"
           />
         </div>
+        <p className="mt-2 font-mono text-[10px] leading-relaxed text-fade">
+          Do not paste secrets or private code. Project context is sent to the AI provider.
+        </p>
 
         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
           <textarea
@@ -773,11 +785,22 @@ function ReleaseAdvicePanel({ release, isOpen }: { release: ReleaseFeedItem; isO
         <div className="border-t border-line p-3">
           <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fade">
             <span>risk</span>
-            <span className={cn('rounded-[3px] border px-1.5 py-0.5', adviceRiskTone(advice.risk_level))}>
+            <span
+              className={cn(
+                'rounded-[3px] border px-1.5 py-0.5',
+                adviceRiskTone(advice.risk_level),
+              )}
+            >
               {advice.risk_level}
             </span>
           </div>
           <p className="mt-2 text-[13px] leading-relaxed text-ink">{advice.answer}</p>
+
+          {advice.coverage_note && (
+            <p className="mt-2 font-mono text-[11px] leading-relaxed text-fade">
+              {advice.coverage_note}
+            </p>
+          )}
 
           {advice.project_impact && (
             <div className="mt-3">

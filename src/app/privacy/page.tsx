@@ -30,6 +30,10 @@ export default function PrivacyPage() {
           you choose to follow.
         </li>
         <li>
+          <strong>AI upgrade questions</strong> if you ask about a release: your question, optional
+          current version, and optional project context you type into the form.
+        </li>
+        <li>
           <strong>Digest signup email</strong> if you subscribe from a public page without signing
           in. We store the email address, signup source, and optional stack slug you subscribed
           from.
@@ -57,6 +61,9 @@ export default function PrivacyPage() {
         <li>To show you a personalised feed of releases.</li>
         <li>To send your selected repos through GitHub&apos;s public release API every 4 hours.</li>
         <li>To summarise release notes using OpenRouter (model details are public).</li>
+        <li>
+          To answer release upgrade questions using OpenRouter when you explicitly submit one.
+        </li>
         <li>To respond to support requests you send us.</li>
         <li>To send opt-in release and upgrade digests if you subscribe on a public page.</li>
       </ul>
@@ -67,8 +74,9 @@ export default function PrivacyPage() {
         <a href="https://neon.tech" target="_blank" rel="noopener noreferrer">
           neon.tech
         </a>
-        ), inside the EU/US region you signed up from. The app is hosted on Vercel. We do not sell
-        or share your data with third parties.
+        ), inside the EU/US region you signed up from. The app is hosted on Vercel. Release notes
+        and AI upgrade questions are sent to OpenRouter when AI features run. We do not sell your
+        data.
       </p>
 
       <h2>Your rights</h2>
