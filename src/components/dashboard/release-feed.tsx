@@ -2,11 +2,12 @@
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
-import { Link01Icon } from 'hugeicons-react'
+import { AiChat02Icon, Link01Icon, SentIcon } from 'hugeicons-react'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
-import { useEffect, useMemo, useTransition, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, useTransition, type FormEvent, type ReactNode } from 'react'
 
 import { markReleaseUnread, markReleasesRead } from '@/lib/actions'
+import type { ReleaseAdvice } from '@/lib/ai'
 import {
   importanceFilters,
   readFilters,
@@ -70,6 +71,12 @@ const signalTone: Record<string, string> = {
   feature: 'border-emerald/30 bg-emerald/10 text-emerald',
   security: 'border-rose/30 bg-rose/10 text-rose',
 }
+
+const suggestedAdviceQuestions = [
+  'Is this upgrade worth doing now?',
+  'What hidden blockers should I check first?',
+  'Could this affect my project?',
+]
 
 export function ReleaseFeed({
   initialImportance,
@@ -404,6 +411,7 @@ function ReleaseCard({
     Array.isArray(release.migrationSteps) &&
     release.migrationSteps.length > 0
   const visibleSignals = (release.releaseSignals ?? []).filter((signal) => signal in signalTone)
+  const [isAdviceOpen, setIsAdviceOpen] = useState(false)
 
   return (
     <article className={`relative pl-10 animate-fade-up stagger-${Math.min(index + 1, 10)}`}>
@@ -588,39 +596,249 @@ function ReleaseCard({
             </div>
           )}
 
-          {release.rawReleaseUrl && (
+          {(release.rawReleaseUrl || canManageReadState) && (
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-              <a
-                href={release.rawReleaseUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 font-mono text-[11px] text-fade hover:text-lime transition-colors"
-              >
-                <Link01Icon className="w-3 h-3" />
-                view source on github
-                <span className="text-mute">↗</span>
-              </a>
+              <div className="flex flex-wrap items-center gap-3">
+                {release.rawReleaseUrl && (
+                  <a
+                    href={release.rawReleaseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 font-mono text-[11px] text-fade hover:text-lime transition-colors"
+                  >
+                    <Link01Icon className="w-3 h-3" />
+                    view source on github
+                    <span className="text-mute">↗</span>
+                  </a>
+                )}
+              </div>
               {canManageReadState && (
-                <button
-                  type="button"
-                  onClick={() => onToggleRead(release)}
-                  disabled={isMarking}
-                  className={cn(
-                    'rounded-md border px-2.5 py-1.5 font-mono text-[11px] transition-colors disabled:opacity-50',
-                    release.isRead
-                      ? 'border-ruling text-fade hover:border-cyan hover:text-cyan'
-                      : 'border-lime/30 bg-lime-dim text-lime hover:bg-lime/15',
-                  )}
-                >
-                  {release.isRead ? 'mark unread' : 'mark read'}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <AskReleaseAdvice
+                    isOpen={isAdviceOpen}
+                    onToggle={() => setIsAdviceOpen((value) => !value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onToggleRead(release)}
+                    disabled={isMarking}
+                    className={cn(
+                      'rounded-md border px-2.5 py-1.5 font-mono text-[11px] transition-colors disabled:opacity-50',
+                      release.isRead
+                        ? 'border-ruling text-fade hover:border-cyan hover:text-cyan'
+                        : 'border-lime/30 bg-lime-dim text-lime hover:bg-lime/15',
+                    )}
+                  >
+                    {release.isRead ? 'mark unread' : 'mark read'}
+                  </button>
+                </div>
               )}
             </div>
           )}
+
+          {canManageReadState && <ReleaseAdvicePanel release={release} isOpen={isAdviceOpen} />}
         </div>
       </div>
     </article>
   )
+}
+
+function AskReleaseAdvice({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-expanded={isOpen}
+      onClick={onToggle}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-mono text-[11px] transition-colors',
+        isOpen
+          ? 'border-cyan/40 bg-cyan/15 text-cyan'
+          : 'border-cyan/30 bg-cyan/10 text-cyan hover:bg-cyan/15',
+      )}
+    >
+      <AiChat02Icon className="h-3.5 w-3.5" />
+      ask ai
+    </button>
+  )
+}
+
+function ReleaseAdvicePanel({ release, isOpen }: { release: ReleaseFeedItem; isOpen: boolean }) {
+  const [question, setQuestion] = useState(suggestedAdviceQuestions[0])
+  const [currentVersion, setCurrentVersion] = useState('')
+  const [projectContext, setProjectContext] = useState('')
+  const [advice, setAdvice] = useState<ReleaseAdvice | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  if (!isOpen) return null
+
+  const submitQuestion = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
+
+    startTransition(async () => {
+      const response = await fetch('/api/release-advice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          releaseId: release.id,
+          question,
+          currentVersion,
+          projectContext,
+        }),
+      })
+      const body = (await response.json()) as { advice?: ReleaseAdvice; error?: string }
+
+      if (!response.ok || !body.advice) {
+        setAdvice(null)
+        setError(body.error || 'could not generate advice')
+        return
+      }
+
+      setAdvice(body.advice)
+    })
+  }
+
+  return (
+    <div className="mt-5 rounded-md border border-cyan/25 bg-void overflow-hidden">
+      <div className="px-3 py-2 border-b border-line flex items-center gap-2 font-mono text-[10px] text-cyan">
+        <AiChat02Icon className="h-3.5 w-3.5" />
+        <span>ai_upgrade_review</span>
+        <span className="ml-auto text-fade">{release.techSlug}@{release.version}</span>
+      </div>
+
+      <form onSubmit={submitQuestion} className="p-3">
+        <div className="flex flex-wrap gap-2">
+          {suggestedAdviceQuestions.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setQuestion(item)}
+              className={cn(
+                'rounded-[3px] border px-2 py-1 font-mono text-[10px] transition-colors',
+                question === item
+                  ? 'border-cyan/40 bg-cyan/10 text-cyan'
+                  : 'border-ruling text-fade hover:border-cyan/30 hover:text-cyan',
+              )}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[160px_1fr]">
+          <input
+            value={currentVersion}
+            onChange={(event) => setCurrentVersion(event.target.value)}
+            aria-label="Current version"
+            placeholder="using version..."
+            className="h-9 rounded-md border border-line bg-shade px-3 font-mono text-[12px] text-dust placeholder:text-fade"
+          />
+          <input
+            value={projectContext}
+            onChange={(event) => setProjectContext(event.target.value)}
+            aria-label="Project context"
+            placeholder="project context, e.g. monorepo, next app, package manager..."
+            className="h-9 rounded-md border border-line bg-shade px-3 font-mono text-[12px] text-dust placeholder:text-fade"
+          />
+        </div>
+
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+          <textarea
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            aria-label="Question for AI"
+            maxLength={1000}
+            rows={3}
+            className="min-h-20 resize-y rounded-md border border-line bg-shade px-3 py-2 font-mono text-[12px] leading-relaxed text-dust"
+          />
+          <button
+            type="submit"
+            disabled={isPending || question.trim().length < 4}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-md border border-lime/30 bg-lime-dim px-3 font-mono text-[11px] text-lime transition-colors hover:bg-lime/15 disabled:opacity-50 sm:self-end"
+          >
+            <SentIcon className="h-3.5 w-3.5" />
+            {isPending ? 'asking...' : 'ask'}
+          </button>
+        </div>
+      </form>
+
+      {error && (
+        <div className="border-t border-line px-3 py-3 font-mono text-[12px] text-rose">
+          {error}
+        </div>
+      )}
+
+      {advice && (
+        <div className="border-t border-line p-3">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fade">
+            <span>risk</span>
+            <span className={cn('rounded-[3px] border px-1.5 py-0.5', adviceRiskTone(advice.risk_level))}>
+              {advice.risk_level}
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] leading-relaxed text-ink">{advice.answer}</p>
+
+          {advice.project_impact && (
+            <div className="mt-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-cyan">
+                project impact
+              </div>
+              <p className="mt-1 text-[13px] leading-relaxed text-dust">{advice.project_impact}</p>
+            </div>
+          )}
+
+          {advice.blockers.length > 0 && (
+            <AdviceList title="blockers" items={advice.blockers} tone="rose" />
+          )}
+
+          {advice.next_steps.length > 0 && (
+            <AdviceList title="next steps" items={advice.next_steps} tone="lime" />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AdviceList({
+  title,
+  items,
+  tone,
+}: {
+  title: string
+  items: string[]
+  tone: 'lime' | 'rose'
+}) {
+  return (
+    <div className="mt-3">
+      <div
+        className={cn(
+          'font-mono text-[10px] uppercase tracking-[0.18em]',
+          tone === 'rose' ? 'text-rose' : 'text-lime',
+        )}
+      >
+        {title}
+      </div>
+      <ul className="mt-1 space-y-1 font-mono text-[12.5px] leading-relaxed">
+        {items.map((item, index) => (
+          <li key={`${title}-${index}`} className="flex gap-2 text-dust">
+            <span className={tone === 'rose' ? 'text-rose' : 'text-lime'}>
+              {tone === 'rose' ? '!' : '>'}
+            </span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function adviceRiskTone(risk: ReleaseAdvice['risk_level']) {
+  if (risk === 'high') return 'border-rose/30 bg-rose/10 text-rose'
+  if (risk === 'medium') return 'border-amber/30 bg-amber/10 text-amber'
+  if (risk === 'low') return 'border-emerald/30 bg-emerald/10 text-emerald'
+  return 'border-ruling bg-shade text-fade'
 }
 
 function Stat({

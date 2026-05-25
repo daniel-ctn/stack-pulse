@@ -45,6 +45,16 @@ const releaseSummarySchema = z.object({
 
 export type ReleaseSummary = z.infer<typeof releaseSummarySchema>
 
+const releaseAdviceSchema = z.object({
+  risk_level: z.enum(['low', 'medium', 'high', 'unknown']),
+  answer: z.string(),
+  project_impact: z.string().nullable().optional(),
+  blockers: z.array(z.string()).default([]),
+  next_steps: z.array(z.string()).default([]),
+})
+
+export type ReleaseAdvice = z.infer<typeof releaseAdviceSchema>
+
 const releaseSignalValues = ['breaking', 'deprecation', 'migration', 'feature', 'security'] as const
 type ReleaseSignal = (typeof releaseSignalValues)[number]
 
@@ -55,6 +65,26 @@ export type SummarizeReleaseInput = {
   body: string | null
   url: string
   prerelease: boolean
+}
+
+export type AdviseOnReleaseInput = {
+  techName: string
+  version: string
+  title: string | null
+  summary: string | null
+  newFeatures: string[] | null
+  breakingChanges: string[] | null
+  securityNotes: string[] | null
+  deprecations: string[] | null
+  migrationSteps: string[] | null
+  impactSummary: string | null
+  recommendedAction: string | null
+  releaseSignals: string[] | null
+  rawReleaseBody: string | null
+  rawReleaseUrl: string | null
+  currentVersion?: string | null
+  projectContext?: string | null
+  question: string
 }
 
 const SYSTEM_PROMPT = `You are a technical release analyst. Given the markdown of a GitHub release, extract key information and return a JSON object.
@@ -128,6 +158,80 @@ export async function summarizeRelease(input: SummarizeReleaseInput): Promise<Re
   return normalizeReleaseSummary(parsed.data)
 }
 
+export async function adviseOnRelease(input: AdviseOnReleaseInput): Promise<ReleaseAdvice> {
+  const model = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat'
+  const response = await getOpenAI().chat.completions.create({
+    model,
+    messages: [
+      {
+        role: 'system',
+        content: `You are a senior dependency upgrade reviewer. Answer the user's question using only the provided release data and project context.
+
+Rules:
+- Be direct about whether the upgrade seems worth considering.
+- Call out hidden blockers, breaking changes, migration work, deprecations, security concerns, and test focus.
+- If project context is missing, say project-specific impact cannot be determined from release notes alone.
+- Do not invent compatibility issues or migration steps that are not supported by the release data.
+- Keep the answer concise and actionable.
+- Return ONLY valid JSON in this exact format:
+{
+  "risk_level": "low" | "medium" | "high" | "unknown",
+  "answer": "string",
+  "project_impact": "string or null",
+  "blockers": ["string"],
+  "next_steps": ["string"]
+}`,
+      },
+      {
+        role: 'user',
+        content: [
+          `Package: ${input.techName}`,
+          `Target version/tag: ${input.version}`,
+          `Release title: ${input.title || input.version}`,
+          `Source URL: ${input.rawReleaseUrl || 'unknown'}`,
+          `Current project version: ${input.currentVersion?.trim() || 'not provided'}`,
+          '',
+          'User question:',
+          input.question,
+          '',
+          'Project context:',
+          input.projectContext?.trim() || '(No project context provided.)',
+          '',
+          'Stored AI summary:',
+          input.summary || '(No summary available.)',
+          '',
+          `New features: ${formatAdviceList(input.newFeatures)}`,
+          `Breaking changes: ${formatAdviceList(input.breakingChanges)}`,
+          `Security notes: ${formatAdviceList(input.securityNotes)}`,
+          `Deprecations: ${formatAdviceList(input.deprecations)}`,
+          `Migration steps: ${formatAdviceList(input.migrationSteps)}`,
+          `Impact summary: ${input.impactSummary || 'unknown'}`,
+          `Recommended action: ${input.recommendedAction || 'unknown'}`,
+          `Signals: ${formatAdviceList(input.releaseSignals)}`,
+          '',
+          'Release notes excerpt:',
+          input.rawReleaseBody?.trim().slice(0, 9000) || '(No release notes were stored.)',
+        ].join('\n'),
+      },
+    ],
+    temperature: 0.2,
+    response_format: { type: 'json_object' },
+  })
+
+  const content = response.choices[0]?.message?.content
+  if (!content) throw new Error('No response from AI')
+
+  const parsed = releaseAdviceSchema.safeParse(JSON.parse(content))
+  if (!parsed.success) {
+    throw new Error(`AI response failed validation: ${parsed.error.message}`)
+  }
+
+  return {
+    ...parsed.data,
+    project_impact: normalizeNullableText(parsed.data.project_impact),
+  }
+}
+
 function normalizeReleaseSummary(summary: ReleaseSummary): ReleaseSummary {
   const signals = new Set<ReleaseSignal>(summary.release_signals)
 
@@ -151,4 +255,8 @@ function normalizeReleaseSummary(summary: ReleaseSummary): ReleaseSummary {
 function normalizeNullableText(value: string | null | undefined) {
   const trimmed = value?.trim()
   return trimmed ? trimmed : null
+}
+
+function formatAdviceList(items: string[] | null | undefined) {
+  return items?.length ? items.join('; ') : 'none listed'
 }
