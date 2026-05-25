@@ -612,12 +612,16 @@ function ReleaseCard({
                   </a>
                 )}
               </div>
-              {canManageReadState && (
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {canManageReadState ? (
                   <AskReleaseAdvice
                     isOpen={isAdviceOpen}
                     onToggle={() => setIsAdviceOpen((value) => !value)}
                   />
+                ) : (
+                  <SignInAdviceHint />
+                )}
+                {canManageReadState && (
                   <button
                     type="button"
                     onClick={() => onToggleRead(release)}
@@ -631,8 +635,8 @@ function ReleaseCard({
                   >
                     {release.isRead ? 'mark unread' : 'mark read'}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
 
@@ -659,6 +663,18 @@ function AskReleaseAdvice({ isOpen, onToggle }: { isOpen: boolean; onToggle: () 
       <AiChat02Icon className="h-3.5 w-3.5" />
       ask ai
     </button>
+  )
+}
+
+function SignInAdviceHint() {
+  return (
+    <a
+      href="/sign-in"
+      className="inline-flex items-center gap-1.5 rounded-md border border-ruling bg-shade px-2.5 py-1.5 font-mono text-[11px] text-fade transition-colors hover:border-cyan/30 hover:text-cyan"
+    >
+      <AiChat02Icon className="h-3.5 w-3.5" />
+      sign in to ask more about this update
+    </a>
   )
 }
 
