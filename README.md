@@ -77,9 +77,13 @@ The release fetcher is a single endpoint authed by `CRON_SECRET`:
 curl -H "Authorization: Bearer <CRON_SECRET>" "http://localhost:3000/api/cron/fetch-releases"
 ```
 
+## Documentation
+
+Detailed docs for contributors and AI agents live in [`docs/`](docs/). Start at [`docs/AGENT_START_HERE.md`](docs/AGENT_START_HERE.md).
+
 ## Deploying
 
-The project ships with a [`vercel.json`](vercel.json) that schedules the release fetcher every 4 hours. To deploy:
+The project ships with a [`vercel.json`](vercel.json) that schedules the release fetcher **twice daily** (00:00 and 12:00 UTC). To deploy:
 
 1. Push to GitHub.
 2. Import the repo into Vercel.
@@ -89,7 +93,7 @@ The project ships with a [`vercel.json`](vercel.json) that schedules the release
 
 ## Environment variables
 
-See [`.env.example`](.env.example) for the canonical list. Required for any deploy:
+See [`.env.example`](.env.example) and [`docs/operations/environment-variables.md`](docs/operations/environment-variables.md). Required for any deploy:
 
 - `DATABASE_URL` — Neon connection string
 - `BETTER_AUTH_SECRET` — `openssl rand -hex 32`
