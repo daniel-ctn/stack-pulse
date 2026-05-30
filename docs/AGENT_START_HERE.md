@@ -108,7 +108,7 @@ When editing a doc, set status in the first lines. Move completed plans to `docs
 - Match existing patterns in neighboring files; minimal diff.
 - Update docs when changing routes, APIs, env vars, schema, auth, cron, or user-visible behavior.
 - Do not update docs for tiny refactors or obvious code-only changes.
-- On Windows, prefer `cmd.exe` for shell commands.
+- Prefer pnpm; on Windows use **Command Prompt (`cmd.exe`)** for shell commands — see `AGENTS.md` → **Windows shell** and `.cursor/rules/windows-cmd-shell.mdc`.
 - Next.js 16 APIs may differ from training data — check `node_modules/next/dist/docs/` when unsure.
 - No commits unless the user asks.
 

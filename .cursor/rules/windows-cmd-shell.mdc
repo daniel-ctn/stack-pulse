@@ -1,0 +1,22 @@
+---
+description: Use Command Prompt syntax for shell commands on Windows
+alwaysApply: true
+---
+
+# Windows shell (Command Prompt)
+
+When running terminal commands in this repo on Windows:
+
+- Use **Command Prompt** (`cmd.exe`), not PowerShell.
+- Chain with `&&`, not `;`.
+- Use `set VAR=value` for env vars, not `$env:VAR`.
+- Prefer `cmd /c "..."` when a single wrapped command is clearer.
+- Avoid PowerShell-only syntax (`$()`, backtick line continuation, `New-Item`, `Out-Null`).
+
+Example:
+
+```bat
+cmd /c "cd /d \"c:\Work\Side Projects\agent-gate\" && pnpm test"
+```
+
+Only use PowerShell when the user explicitly asks for it or a task requires PowerShell-only tooling.
