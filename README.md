@@ -79,7 +79,7 @@ curl -H "Authorization: Bearer <CRON_SECRET>" "http://localhost:3000/api/cron/fe
 
 ## Documentation
 
-Detailed docs for contributors and AI agents live in [`docs/`](docs/). Start at [`docs/AGENT_START_HERE.md`](docs/AGENT_START_HERE.md).
+Detailed docs for contributors and AI agents live in [`docs/`](docs/). Start at [`docs/AGENT_START_HERE.md`](docs/AGENT_START_HERE.md). For UI and architecture conventions, see [`docs/SYSTEM_DESIGN.md`](docs/SYSTEM_DESIGN.md).
 
 ## Deploying
 

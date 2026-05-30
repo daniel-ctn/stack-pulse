@@ -79,6 +79,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 Use docs as durable project memory, but verify against code before acting.
 
 - Before starting non-trivial work, read `README.md`, `docs/AGENT_START_HERE.md` if present, and any feature doc directly related to the task.
+- For UI, pages, or styling changes, also read `docs/SYSTEM_DESIGN.md` for design tokens, layout patterns, and copy voice.
 - Treat docs as guidance, not absolute truth. If docs and code disagree, trust the code, surface the mismatch, and update the doc only if the task changes durable behavior.
 - Update docs when changing architecture, routes/APIs, environment variables, database schema, billing/auth/security behavior, testing commands, or user-visible feature behavior.
 - Do not update docs for incidental implementation details, temporary debugging, tiny refactors, or changes that are already obvious from code/tests.

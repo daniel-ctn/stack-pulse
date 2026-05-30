@@ -11,6 +11,7 @@ Index for humans and AI agents. Agents should start at [AGENT_START_HERE.md](./A
 | Folder | Purpose |
 |--------|---------|
 | [AGENT_START_HERE.md](./AGENT_START_HERE.md) | Session entry point: read order, stack truth, drift, verification |
+| [SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md) | Architecture, data flows, **UI design system** (tokens, layout, copy) |
 | [features/](./features/) | How each product system works **today** |
 | [operations/](./operations/) | Local setup, env, database, deployment, verification |
 | [strategy/](./strategy/) | Roadmap and product direction (empty until added) |
@@ -64,6 +65,7 @@ Mark archived files with `Status: historical` or `Status: superseded` in the hea
 3. **Trust code** — update docs when architecture, routes, env, schema, auth, cron, or user-visible behavior changes.
 4. **Move, don't delete** — completed plans go to `archive/`.
 5. **Link from AGENT_START_HERE** when adding a new feature or ops doc to the source-of-truth map.
-6. **Relative links** — use paths from the doc's location; run link checks after moves.
+6. **UI changes** must follow [SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md) for tokens, frames, typography, and badges.
+7. **Relative links** — use paths from the doc's location; run link checks after moves.
 
 Root-level [README.md](../README.md) stays the public-facing quick start; deep detail lives here.

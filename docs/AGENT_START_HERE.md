@@ -11,9 +11,10 @@ StackPulse is a Next.js app that tracks GitHub releases for developer stacks, AI
 
 1. This file (every session)
 2. [`README.md`](../README.md) — product overview and quick start
-3. [`AGENTS.md`](../AGENTS.md) / [`CLAUDE.md`](../CLAUDE.md) — behavioral rules
-4. Task-specific doc from [`docs/README.md`](./README.md)
-5. Source files listed in the **source-of-truth map** below before changing behavior
+3. [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md) — architecture + **UI design system** (required for any UI/page work)
+4. [`AGENTS.md`](../AGENTS.md) / [`CLAUDE.md`](../CLAUDE.md) — behavioral rules
+5. Task-specific doc from [`docs/README.md`](./README.md)
+6. Source files listed in the **source-of-truth map** below before changing behavior
 
 Trust code over docs when they disagree. Surface drift; update docs only when the task changes durable behavior.
 
@@ -83,6 +84,7 @@ Old Drizzle snapshots (`drizzle/meta/0000_snapshot.json`, `0001`) still mention 
 | Deploy & cron | `vercel.json`, README | [operations/deployment.md](./operations/deployment.md) | Vercel Cron auth via `CRON_SECRET` |
 | Local dev | `package.json` scripts | [operations/local-development.md](./operations/local-development.md) | No test suite in repo |
 | Digest capture | `digestSubscribers` table, `subscribeToDigest` | [features/digest-signup.md](./features/digest-signup.md) | Capture only |
+| System + UI design | `globals.css`, `src/components/**` | [SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md) | Tokens, layout, copy voice, badges |
 
 ---
 
@@ -102,6 +104,7 @@ When editing a doc, set status in the first lines. Move completed plans to `docs
 ## Work rules for agents
 
 - Read this file + task doc before non-trivial changes.
+- For UI, pages, or styling: read [SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md) and match tokens, frames, typography, and badge tones.
 - Match existing patterns in neighboring files; minimal diff.
 - Update docs when changing routes, APIs, env vars, schema, auth, cron, or user-visible behavior.
 - Do not update docs for tiny refactors or obvious code-only changes.
@@ -170,4 +173,5 @@ See [operations/environment-variables.md](./operations/environment-variables.md)
 - [ ] `pnpm exec tsc --noEmit && pnpm lint` pass (or note why not run)
 - [ ] Docs updated if routes/APIs/env/schema/user-visible behavior changed
 - [ ] Doc status + paths correct; no broken relative links in edited docs
+- [ ] UI changes follow [SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md) (tokens, frames, copy voice)
 - [ ] Drift called out to user if docs/copy still disagree with code

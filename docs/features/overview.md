@@ -2,7 +2,9 @@
 
 **Status:** current
 
-## Route map
+## Routes & pages
+
+App Router route groups — see [SYSTEM_DESIGN.md](../SYSTEM_DESIGN.md) for UI templates and layout widths.
 
 | Path | File | Auth | Purpose |
 |------|------|------|---------|
