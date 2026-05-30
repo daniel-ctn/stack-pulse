@@ -28,7 +28,7 @@ git diff --check
 
 ## Link checks after doc moves
 
-Search active docs for broken relative paths; ensure `docs/AGENT_START_HERE.md` map matches new files. UI work should match `docs/SYSTEM_DESIGN.md`.
+Search active docs for broken relative paths; ensure `docs/AGENT_START_HERE.md` map matches new files. UI work should match `docs/DESIGN_SYSTEM.md`.
 
 ## Provider drift audit
 

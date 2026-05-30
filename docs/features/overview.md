@@ -4,7 +4,7 @@
 
 ## Routes & pages
 
-App Router route groups — see [SYSTEM_DESIGN.md](../SYSTEM_DESIGN.md) for UI templates and layout widths.
+App Router route groups — see [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) for UI templates and layout widths.
 
 | Path | File | Auth | Purpose |
 |------|------|------|---------|

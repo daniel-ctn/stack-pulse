@@ -1,9 +1,9 @@
-# System design
+# Design system
 
 **Status:** current  
 **Last verified:** 2026-05-31 (code + config in repo)
 
-StackPulse architecture and **UI design system**. Read this before adding pages, components, or visual changes so new work matches the terminal-inspired product shell.
+StackPulse **UI design system** and application architecture. Read this before adding pages, components, or visual changes so new work matches the terminal-inspired product shell.
 
 Related: [AGENT_START_HERE.md](./AGENT_START_HERE.md) (stack truth), [features/overview.md](./features/overview.md) (routes).
 
