@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR-003 — Ingest followed stacks only</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← ADRs</a></p>
+    <h1>ADR-003: Cron ingests only technologies with at least one follower</h1>
+    <p class="meta"><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-04</p>
+
+    <h2>Context</h2>
+    <p>The seed registry contains 20 technologies. Continuously fetching all registry repos would burn GitHub API quota and OpenRouter cost for stacks nobody watches. Public SEO pages still need release data for popular stacks.</p>
+
+    <h2>Decision</h2>
+    <ul>
+      <li>Scheduled cron loads technologies via <code>INNER JOIN user_tech_preferences</code> (dedupe by tech id).</li>
+      <li>Registry stacks with zero followers are <strong>not</strong> fetched on cron.</li>
+      <li>Adding a custom repo triggers <strong>immediate</strong> ingestion for that tech (<code>custom_repo</code> trigger).</li>
+    </ul>
+
+    <h2>Consequences</h2>
+    <p><strong>Positive:</strong> Cost and cron duration scale with active user interest, not registry size.</p>
+    <p><strong>Negative:</strong> Public <code>/stacks/[slug]</code> pages stay empty until someone follows that stack (or custom add). SEO for unpopular registry entries depends on first follower.</p>
+    <p><strong>Operational:</strong> Product copy should not imply “we fetch every package in the catalog” on a schedule.</p>
+
+    <footer>ADR-003</footer>
+  </div>
+</body>
+</html>

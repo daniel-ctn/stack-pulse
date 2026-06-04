@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR-005 — HTML architecture docs</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← ADRs</a></p>
+    <h1>ADR-005: HTML format for architecture documentation</h1>
+    <p class="meta"><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-04</p>
+
+    <h2>Context</h2>
+    <p>Architecture documentation must be readable by humans in the browser (rich tables, diagrams, navigation) and comprehensive enough for onboarding. Markdown in-repo remains the default for feature/ops docs and agent workflows.</p>
+
+    <h2>Decision</h2>
+    <ul>
+      <li>Maintain the <strong>architecture layer</strong> as static HTML under <code>docs/architecture/</code>.</li>
+      <li>Share styling via <code>docs/architecture/styles.css</code>.</li>
+      <li>Keep database deep-dive at <code>docs/database-architecture.html</code> (linked from hub).</li>
+      <li>Continue feature/ops/agent docs in Markdown for diffability and existing agent read order.</li>
+    </ul>
+
+    <h2>Consequences</h2>
+    <p><strong>Positive:</strong> Single-click browser reading; consistent visual design; tables and callouts without MD renderer quirks.</p>
+    <p><strong>Negative:</strong> HTML diffs are noisier than Markdown; agents may prefer MD — hub must link both layers.</p>
+    <p><strong>Maintenance:</strong> Update HTML when architecture changes; trust <code>src/</code> on conflict.</p>
+
+    <footer>ADR-005</footer>
+  </div>
+</body>
+</html>

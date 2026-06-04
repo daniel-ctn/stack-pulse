@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — Frontend Architecture</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← Architecture hub</a></p>
+    <h1>Frontend architecture</h1>
+    <p class="meta"><strong>Status:</strong> current · <strong>Last verified:</strong> 2026-06-04</p>
+
+    <p>
+      Structural patterns for the Next.js UI. Visual design (tokens, typography, frames) lives in
+      <code>docs/DESIGN_SYSTEM.md</code> — not duplicated here.
+    </p>
+
+    <h2 id="stack">1. Frontend stack</h2>
+    <table>
+      <thead><tr><th>Technology</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Next.js 16 App Router</td><td>Routing, RSC, layouts, metadata</td></tr>
+        <tr><td>React 19</td><td>UI runtime</td></tr>
+        <tr><td>Tailwind CSS v4</td><td>Styling via design tokens in <code>globals.css</code></td></tr>
+        <tr><td>shadcn / base-ui</td><td>Primitive components (<code>src/components/ui/</code>)</td></tr>
+        <tr><td>TanStack Query v5</td><td>Client feed pagination + cache</td></tr>
+        <tr><td>nuqs</td><td>URL-synced filter state</td></tr>
+        <tr><td>@tanstack/react-virtual</td><td>Virtualized release list</td></tr>
+        <tr><td>hugeicons-react</td><td>Product icons</td></tr>
+        <tr><td>motion</td><td>Landing hero only</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="split">2. Server vs client split</h2>
+    <table>
+      <thead><tr><th>Pattern</th><th>Where</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>React Server Components (default)</td><td><code>page.tsx</code>, layouts</td><td>Auth session, initial DB fetch, SEO metadata</td></tr>
+        <tr><td><code>'use client'</code></td><td>Feed, filters, forms, interactive chrome</td><td>Hooks, TanStack Query, nuqs, virtualization</td></tr>
+        <tr><td>Server actions</td><td>Called from client components</td><td>Mutations without custom REST endpoints</td></tr>
+        <tr><td>Route handlers</td><td>Feed JSON, cron, advice</td><td>Non-HTML consumers, cron auth</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="feed">3. Dashboard feed architecture</h2>
+    <div class="diagram">dashboard/page.tsx (RSC)
+  ├─ getSession()
+  ├─ parse searchParams (same parsers as API)
+  ├─ getReleaseFeedPage() → initialPage
+  └─ getUserTechOptions() / getAllTechOptions()
+        │
+        ▼
+ReleaseFeed ('use client')
+  ├─ nuqs: importance, read, signal, tech, q
+  ├─ TanStack Query: GET /api/releases?cursor=...
+  ├─ useVirtualizer: long lists
+  └─ server actions: markReleasesRead, markReleaseUnread</div>
+
+    <h3>Hydration contract</h3>
+    <ul>
+      <li>Server passes <code>initialPage</code> matching current URL filters.</li>
+      <li>Client query uses same filter key in <code>queryKey: ['release-feed', ...]</code>.</li>
+      <li>Filter changes reset cursor and refetch from API.</li>
+      <li>Parsers live in <code>release-feed-types.ts</code> — must stay in sync with nuqs parsers on client.</li>
+    </ul>
+
+    <h2 id="url">4. URL state (nuqs)</h2>
+    <p>Feed filters are reflected in the query string so dashboard URLs are shareable and back/forward works.</p>
+    <table>
+      <thead><tr><th>Query key</th><th>Parser source</th></tr></thead>
+      <tbody>
+        <tr><td><code>importance</code></td><td><code>parseImportanceFilter</code></td></tr>
+        <tr><td><code>read</code></td><td><code>parseReadFilter</code></td></tr>
+        <tr><td><code>signal</code></td><td><code>parseSignalFilter</code></td></tr>
+        <tr><td><code>tech</code></td><td><code>parseTechFilter</code></td></tr>
+        <tr><td><code>q</code></td><td><code>parseSearchFilter</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="dirs">5. Directory conventions</h2>
+    <pre>src/app/
+  (auth)/          sign-in, sign-up redirect
+  (dashboard)/     onboarding, dashboard — robots noindex layout
+  stacks/          public SEO pages
+  api/             route handlers
+src/components/
+  dashboard/       feed, user menu, filters
+  landing/         marketing, digest form, legal shell
+  ui/              shadcn primitives, loaders, errors
+src/lib/
+  release-feed.ts  server-only queries
+  actions.ts       'use server' mutations</pre>
+
+    <h2 id="loading">6. Loading &amp; error UX</h2>
+    <ul>
+      <li>Route-level <code>loading.tsx</code> skeletons under dashboard (frame + skeleton pattern).</li>
+      <li><code>PulseLoader</code> for inline loading — not generic spinners.</li>
+      <li><code>ErrorView</code> for error boundaries.</li>
+      <li><code>prefers-reduced-motion</code> respected in global CSS.</li>
+    </ul>
+
+    <h2 id="public">7. Public stacks pages</h2>
+    <p>Fully server-rendered — no TanStack Query. Data from <code>public-stacks.ts</code>. JSON-LD in page for SEO. Signal badges derived server-side to match feed semantics.</p>
+
+    <h2 id="auth-ui">8. Auth UI flow</h2>
+    <p>Sign-in page triggers Better Auth client redirect. Post-auth: middleware-less flow — pages check session and redirect empty stacks to <code>/onboarding</code>.</p>
+
+    <h2 id="checklist">9. Extension checklist (structure)</h2>
+    <ul>
+      <li>New filter? Update <code>release-feed-types.ts</code>, <code>release-feed.ts</code>, nuqs client, and API route.</li>
+      <li>New mutation? Prefer server action in <code>actions.ts</code> with <code>{ ok, error }</code> pattern.</li>
+      <li>New paginated list? Reuse keyset cursor pattern, not offset.</li>
+      <li>Keep product icons on <code>hugeicons-react</code> per design system.</li>
+    </ul>
+
+    <footer>Visual tokens: <code>docs/DESIGN_SYSTEM.md</code> · API: <a href="api-contract.html">api contract</a></footer>
+  </div>
+</body>
+</html>

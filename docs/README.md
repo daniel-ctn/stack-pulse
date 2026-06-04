@@ -12,6 +12,8 @@ Index for humans and AI agents. Agents should start at [AGENT_START_HERE.md](./A
 |--------|---------|
 | [AGENT_START_HERE.md](./AGENT_START_HERE.md) | Session entry point: read order, stack truth, drift, verification |
 | [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) | **UI design system** (tokens, layout, copy) + architecture overview |
+| [architecture/index.html](./architecture/index.html) | **Architecture docs (HTML)** — system, deployment, security, API, ADRs |
+| [database-architecture.html](./database-architecture.html) | Database schema, indexes, data flows (HTML) |
 | [features/](./features/) | How each product system works **today** |
 | [operations/](./operations/) | Local setup, env, database, deployment, verification |
 | [strategy/](./strategy/) | Roadmap and product direction (empty until added) |

@@ -74,7 +74,8 @@ Old Drizzle snapshots (`drizzle/meta/0000_snapshot.json`, `0001`) still mention 
 |------|------------|------|-------|
 | Routes & pages | `src/app/**` | [features/overview.md](./features/overview.md) | App Router route groups |
 | Auth | `src/lib/auth.ts`, `src/app/api/auth/[...all]/route.ts` | [features/auth.md](./features/auth.md) | GitHub OAuth, Better Auth tables |
-| DB schema | `src/db/schema.ts`, `drizzle/` | [operations/database.md](./operations/database.md) | Migrations in `drizzle/` |
+| DB schema | `src/db/schema.ts`, `drizzle/` | [operations/database.md](./operations/database.md), [database-architecture.html](./database-architecture.html) | Migrations in `drizzle/` |
+| Architecture (HTML) | `docs/architecture/` | [architecture/index.html](./architecture/index.html) | System, security, API, ADRs |
 | Release ingestion | `src/lib/release-ingestion.ts`, `src/lib/github.ts` | [features/release-ingestion.md](./features/release-ingestion.md) | Cron + custom-repo trigger |
 | AI summarisation | `src/lib/ai.ts` | [features/ai-summarization.md](./features/ai-summarization.md) | OpenRouter, Zod validation |
 | Release feed | `src/lib/release-feed.ts`, `src/components/dashboard/release-feed.tsx` | [features/release-feed.md](./features/release-feed.md) | Filters, virtualisation, advice UI |

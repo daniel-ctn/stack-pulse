@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — Security Architecture</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← Architecture hub</a></p>
+    <h1>Security architecture</h1>
+    <p class="meta"><strong>Status:</strong> current · <strong>Last verified:</strong> 2026-06-04</p>
+
+    <div class="callout danger">
+      <strong>No Postgres RLS</strong>
+      Authorization is enforced in application code (session checks, preference joins). Anyone with direct DB access bypasses app rules.
+    </div>
+
+    <h2 id="matrix">1. Authentication &amp; authorization matrix</h2>
+    <table>
+      <thead>
+        <tr><th>Surface</th><th>Auth mechanism</th><th>Signed in required?</th><th>Scope / notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>/</code>, <code>/stacks/*</code>, legal</td><td>—</td><td>No</td><td>Public read</td></tr>
+        <tr><td><code>/sign-in</code></td><td>GitHub OAuth</td><td>No</td><td></td></tr>
+        <tr><td><code>/onboarding</code></td><td>Session cookie</td><td>Yes</td><td></td></tr>
+        <tr><td><code>/dashboard</code></td><td>Session optional</td><td>No*</td><td>*Signed-in with 0 stacks → onboarding prompt; feed can be public scope</td></tr>
+        <tr><td><code>/api/auth/*</code></td><td>Better Auth</td><td>—</td><td>OAuth + session management</td></tr>
+        <tr><td><code>GET /api/releases</code></td><td>Session optional</td><td>No</td><td>User scope if session; else all releases. Read filter only if session.</td></tr>
+        <tr><td><code>POST /api/release-advice</code></td><td>Session</td><td>Yes</td><td>Must follow release's tech</td></tr>
+        <tr><td><code>GET /api/cron/fetch-releases</code></td><td><span class="badge badge-cron">CRON_SECRET</span></td><td>N/A</td><td>Bearer token, timing-safe compare</td></tr>
+        <tr><td>Server actions (prefs, read, delete)</td><td>Session</td><td>Yes</td><td><code>requireUserId()</code></td></tr>
+        <tr><td><code>subscribeToDigest</code></td><td>—</td><td>No</td><td>Honeypot <code>website</code> field; IP rate limit</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="secrets">2. Secrets inventory</h2>
+    <table>
+      <thead><tr><th>Secret</th><th>Sensitivity</th><th>Exposure risk</th></tr></thead>
+      <tbody>
+        <tr><td><code>BETTER_AUTH_SECRET</code></td><td>Critical</td><td>Session forgery if leaked</td></tr>
+        <tr><td><code>CRON_SECRET</code></td><td>High</td><td>Unauthorized release ingestion + AI spend</td></tr>
+        <tr><td><code>OPENROUTER_API_KEY</code></td><td>High</td><td>Quota abuse, cost</td></tr>
+        <tr><td><code>GITHUB_CLIENT_SECRET</code></td><td>High</td><td>OAuth impersonation</td></tr>
+        <tr><td><code>GITHUB_TOKEN</code></td><td>Medium</td><td>API abuse within token scope</td></tr>
+        <tr><td><code>DATABASE_URL</code></td><td>Critical</td><td>Full data read/write</td></tr>
+        <tr><td><code>BETTER_AUTH_API_KEY</code></td><td>Medium</td><td>Dash plugin only</td></tr>
+        <tr><td><code>NEXT_PUBLIC_APP_URL</code></td><td>Low</td><td>Public by design</td></tr>
+      </tbody>
+    </table>
+    <p>Never commit <code>.env</code>. Generate secrets with <code>openssl rand -hex 32</code> per <code>.env.example</code>.</p>
+
+    <h2 id="isolation">3. Data isolation</h2>
+    <ul>
+      <li><strong>Feed (authenticated):</strong> <code>inArray(tech_id, followed ids)</code> from <code>user_tech_preferences</code>.</li>
+      <li><strong>Mark read:</strong> Inner join ensures release belongs to a followed tech before insert into <code>user_read_releases</code>.</li>
+      <li><strong>Release advice:</strong> Same preference join on target release.</li>
+      <li><strong>Public API scope:</strong> Unauthenticated <code>/api/releases</code> returns global release set — intentional for browsing, not a leak of user-specific data.</li>
+    </ul>
+
+    <h2 id="rate">4. Rate limiting</h2>
+    <table>
+      <thead><tr><th>Feature</th><th>Key</th><th>Limit</th><th>Window</th><th>Caveat</th></tr></thead>
+      <tbody>
+        <tr><td>Digest signup</td><td>Client IP</td><td>5</td><td>1 hour</td><td>In-memory <code>Map</code> — per serverless instance</td></tr>
+        <tr><td>Release advice</td><td>User ID</td><td>8</td><td>1 hour</td><td>Same — not global on Vercel</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="cron">5. Cron hardening</h2>
+    <ul>
+      <li>Route returns 500 if <code>CRON_SECRET</code> unset.</li>
+      <li>401 if bearer missing or wrong.</li>
+      <li><code>timingSafeEqual</code> on secret comparison (length check first).</li>
+    </ul>
+
+    <h2 id="input">6. Input validation</h2>
+    <table>
+      <thead><tr><th>Input</th><th>Validation</th></tr></thead>
+      <tbody>
+        <tr><td>Tech IDs (prefs)</td><td>UUID regex, max 30, exist in DB</td></tr>
+        <tr><td>Custom repo URL</td><td>Parse github.com URL; owner/repo name regex</td></tr>
+        <tr><td>Digest email</td><td>Max 254 chars, email regex</td></tr>
+        <tr><td>Stack slug</td><td><code>^[a-z0-9-]+$</code></td></tr>
+        <tr><td>Advice body</td><td>Zod: releaseId uuid, question 4–1000 chars, max 6KB body</td></tr>
+        <tr><td>Feed search</td><td>Trim, max 80 chars</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="ai">7. AI / prompt injection</h2>
+    <ul>
+      <li>Release bodies from GitHub are untrusted content passed as model input.</li>
+      <li>Structured outputs validated with Zod before DB insert or JSON response.</li>
+      <li>Advice endpoint does not execute code from model output.</li>
+    </ul>
+
+    <h2 id="deletion">8. Account deletion</h2>
+    <p><code>deleteAccountAction</code> deletes <code>users</code> row; FK cascades remove sessions, accounts, preferences, read state. Releases and technologies remain (shared registry/custom rows).</p>
+
+    <h2 id="seo">9. Privacy &amp; SEO boundaries</h2>
+    <ul>
+      <li>Dashboard route group: <code>robots: noindex</code> on layout.</li>
+      <li>Public stack pages indexable for SEO.</li>
+      <li>Digest table stores email addresses — treat as PII at rest (Neon encryption at rest depends on provider).</li>
+    </ul>
+
+    <footer>See also: <a href="api-contract.html">API contract</a>, <a href="deployment-topology.html">deployment</a></footer>
+  </div>
+</body>
+</html>

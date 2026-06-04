@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — System Overview</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← Architecture hub</a></p>
+    <h1>System overview</h1>
+    <p class="meta"><strong>Status:</strong> current · <strong>Last verified:</strong> 2026-06-04</p>
+
+    <p>
+      StackPulse is a Next.js 16 application that watches GitHub releases for user-selected developer stacks,
+      summarises them with OpenRouter, and presents a filterable release feed with optional upgrade Q&A.
+      It is non-profit, self-hostable, and has no billing layer.
+    </p>
+
+    <nav class="toc">
+      <strong>On this page</strong>
+      <ol>
+        <li><a href="#context">System context (C4 level 1)</a></li>
+        <li><a href="#containers">Containers (C4 level 2)</a></li>
+        <li><a href="#runtime">Runtime model</a></li>
+        <li><a href="#flows">Core flows</a></li>
+        <li><a href="#sequences">Sequence diagrams</a></li>
+        <li><a href="#nfr">Non-functional requirements</a></li>
+        <li><a href="#nongoals">Explicit non-goals</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="context">1. System context (C4 level 1)</h2>
+    <div class="diagram">                    ┌─────────────────┐
+                    │  Developer      │
+                    │  (browser)      │
+                    └────────┬────────┘
+                             │ HTTPS
+                             ▼
+                    ┌─────────────────┐
+                    │  StackPulse     │
+                    │  (Vercel/Node)  │
+                    └────────┬────────┘
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+         ▼                   ▼                   ▼
+  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+  │ GitHub      │    │ OpenRouter  │    │ Neon        │
+  │ OAuth + API │    │ (LLM API)   │    │ Postgres    │
+  └─────────────┘    └─────────────┘    └─────────────┘
+
+  ┌─────────────┐
+  │ Vercel Cron │──cron secret──► StackPulse /api/cron/fetch-releases
+  └─────────────┘</div>
+
+    <table>
+      <thead><tr><th>Actor / system</th><th>Interaction</th></tr></thead>
+      <tbody>
+        <tr><td>Developer</td><td>Browse feed, configure stacks, mark read, ask AI advice, sign up for digest (email only stored)</td></tr>
+        <tr><td>Anonymous visitor</td><td>Landing, public <code>/stacks</code>, optional unauthenticated feed API</td></tr>
+        <tr><td>GitHub</td><td>OAuth for sign-in; Releases API for ingestion</td></tr>
+        <tr><td>OpenRouter</td><td>Release summarisation at ingest; upgrade advice on demand</td></tr>
+        <tr><td>Neon Postgres</td><td>All durable state</td></tr>
+        <tr><td>Vercel Cron</td><td>Twice-daily release fetch for followed stacks</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="containers">2. Containers (C4 level 2)</h2>
+    <table>
+      <thead><tr><th>Container</th><th>Technology</th><th>Responsibility</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Web application</td>
+          <td>Next.js 16 App Router, React 19</td>
+          <td>SSR pages, client islands, server actions, API route handlers</td>
+        </tr>
+        <tr>
+          <td>Auth subsystem</td>
+          <td>Better Auth + Drizzle adapter</td>
+          <td>GitHub OAuth, sessions, account linking</td>
+        </tr>
+        <tr>
+          <td>Ingestion subsystem</td>
+          <td><code>release-ingestion.ts</code>, cron route</td>
+          <td>Fetch GitHub releases → AI summarise → persist</td>
+        </tr>
+        <tr>
+          <td>Feed subsystem</td>
+          <td><code>release-feed.ts</code></td>
+          <td>Filtered, paginated release queries + read state</td>
+        </tr>
+        <tr>
+          <td>Database</td>
+          <td>Neon Postgres via Drizzle (<code>neon-http</code>)</td>
+          <td>Schema in <code>src/db/schema.ts</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="runtime">3. Runtime model</h2>
+    <table>
+      <thead><tr><th>Execution surface</th><th>Used for</th><th>Key modules</th></tr></thead>
+      <tbody>
+        <tr><td>React Server Components</td><td>Initial page data (dashboard, stacks, onboarding)</td><td><code>src/app/**/page.tsx</code></td></tr>
+        <tr><td>Client components</td><td>Interactive feed, filters, virtual list, forms</td><td><code>src/components/**</code></td></tr>
+        <tr><td>Server actions</td><td>Mutations (prefs, read state, digest, custom repo)</td><td><code>src/lib/actions.ts</code></td></tr>
+        <tr><td>Route handlers</td><td>Cron, JSON feed pagination, AI advice</td><td><code>src/app/api/**</code></td></tr>
+        <tr><td>Edge/serverless limits</td><td>Cron <code>maxDuration = 60</code>s; chunked parallel tech processing</td><td><code>fetch-releases/route.ts</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Layering</h3>
+    <table>
+      <thead><tr><th>Layer</th><th>Path</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Routes</td><td><code>src/app/**</code></td><td>Thin composition, metadata, SSR fetch</td></tr>
+        <tr><td>UI</td><td><code>src/components/**</code></td><td>Presentation; <code>'use client'</code> when needed</td></tr>
+        <tr><td>Domain / services</td><td><code>src/lib/**</code></td><td>Auth, AI, GitHub, feed, actions</td></tr>
+        <tr><td>Data</td><td><code>src/db/**</code></td><td>Schema, <code>getDb()</code>, seed</td></tr>
+        <tr><td>Shared types</td><td><code>src/lib/*-types.ts</code></td><td>Filter parsers synced with URL state</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="flows">4. Core flows</h2>
+    <table>
+      <thead><tr><th>Flow</th><th>Entry</th><th>Writes</th><th>Reads / external</th></tr></thead>
+      <tbody>
+        <tr><td>Sign-in</td><td><code>/sign-in</code>, Better Auth</td><td><code>users</code>, <code>accounts</code>, <code>sessions</code></td><td>GitHub OAuth</td></tr>
+        <tr><td>Onboarding</td><td><code>/onboarding</code>, <code>saveTechPreferences</code></td><td><code>user_tech_preferences</code></td><td><code>technologies</code></td></tr>
+        <tr><td>Cron ingestion</td><td><code>GET /api/cron/fetch-releases</code></td><td><code>release_updates</code>, <code>release_fetch_runs</code></td><td>GitHub → OpenRouter</td></tr>
+        <tr><td>Custom repo</td><td><code>addCustomTech</code></td><td><code>technologies</code>, preferences, releases, fetch run</td><td>GitHub verify + immediate ingest</td></tr>
+        <tr><td>Dashboard feed</td><td><code>/dashboard</code>, <code>/api/releases</code></td><td>— (read via mark-read actions)</td><td>Feed query + read join</td></tr>
+        <tr><td>Release advice</td><td><code>POST /api/release-advice</code></td><td>—</td><td>Release rows + OpenRouter</td></tr>
+        <tr><td>Public SEO</td><td><code>/stacks</code>, <code>/stacks/[slug]</code></td><td>—</td><td>Technologies + releases</td></tr>
+        <tr><td>Digest capture</td><td><code>subscribeToDigest</code></td><td><code>digest_subscribers</code></td><td>— (no email pipeline)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="sequences">5. Sequence diagrams</h2>
+
+    <h3>5.1 GitHub sign-in</h3>
+    <div class="diagram">User → Browser: open /sign-in
+Browser → StackPulse: GET /api/auth/sign-in/github
+StackPulse → GitHub: OAuth redirect
+User → GitHub: authorize
+GitHub → StackPulse: callback /api/auth/callback/github
+StackPulse → Neon: upsert user, account, session
+StackPulse → Browser: Set session cookie, redirect dashboard/onboarding</div>
+
+    <h3>5.2 Cron ingestion (one technology)</h3>
+    <div class="diagram">Vercel Cron → API: GET /api/cron/fetch-releases + Bearer CRON_SECRET
+API → Neon: insert release_fetch_runs (running)
+API → Neon: list technologies with ≥1 follower
+loop per tech (chunks of 6 parallel):
+  API → GitHub: latest 5 releases
+  for each new tag:
+    API → OpenRouter: summarizeRelease
+    API → Neon: insert release_updates (on conflict do nothing)
+API → Neon: update release_fetch_runs (completed)</div>
+
+    <h3>5.3 Dashboard feed (first page + infinite scroll)</h3>
+    <div class="diagram">Browser → RSC: GET /dashboard?importance=&signal=...
+RSC → Neon: getUserTechIds, getReleaseFeedPage (limit 30)
+RSC → Browser: HTML + initialPage props
+Browser (client) → API: GET /api/releases?cursor=... (TanStack Query)
+API → Neon: getReleaseFeedPage with keyset cursor
+Browser: virtualized list, mark read via server action</div>
+
+    <h2 id="nfr">6. Non-functional requirements</h2>
+    <table>
+      <thead><tr><th>Concern</th><th>Current behavior</th></tr></thead>
+      <tbody>
+        <tr><td>Availability</td><td>Depends on Vercel + Neon + third-party APIs; no multi-region app tier</td></tr>
+        <tr><td>Latency (feed)</td><td>Keyset pagination, 30 items/page; search uses ILIKE (not FTS)</td></tr>
+        <tr><td>Latency (ingest)</td><td>Dominated by OpenRouter per new release; cron bounded by 60s function timeout</td></tr>
+        <tr><td>Scalability</td><td>Cron scans only followed techs; duplicate tech deduped in cron query</td></tr>
+        <tr><td>Consistency</td><td>No distributed transactions; preference saves are delete+insert loops</td></tr>
+        <tr><td>Cost drivers</td><td>OpenRouter calls at ingest; advice calls on demand; Neon storage (raw_release_body)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="nongoals">7. Explicit non-goals (today)</h2>
+    <ul>
+      <li>Billing / subscriptions (Lemon Squeezy removed in migration 0002)</li>
+      <li>Weekly digest email delivery (signups only)</li>
+      <li>Fetch-run history UI (table exists)</li>
+      <li>PostHog, Sentry, or custom metrics pipeline</li>
+      <li>Automated test suite in CI</li>
+      <li>Row-level security in Postgres (app-layer authorization only)</li>
+    </ul>
+
+    <footer>See also: <a href="deployment-topology.html">deployment</a>, <a href="../database-architecture.html">database</a>, <a href="integrations.html">integrations</a></footer>
+  </div>
+</body>
+</html>

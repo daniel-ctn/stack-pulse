@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — Deployment Topology</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← Architecture hub</a></p>
+    <h1>Deployment topology</h1>
+    <p class="meta"><strong>Status:</strong> current · <strong>Last verified:</strong> 2026-06-04</p>
+
+    <h2 id="diagram">1. Infrastructure diagram</h2>
+    <div class="diagram">┌──────────────────────────────────────────────────────────────┐
+│                         Vercel                                │
+│  ┌────────────────────┐      ┌─────────────────────────────┐ │
+│  │ Next.js app        │      │ Cron (vercel.json)          │ │
+│  │ Serverless/Edge    │      │ 0 0,12 * * * UTC            │ │
+│  │ functions          │      │ → GET /api/cron/fetch-...   │ │
+│  └─────────┬──────────┘      └──────────────┬──────────────┘ │
+└────────────┼─────────────────────────────────┼────────────────┘
+             │ HTTPS (neon HTTP driver)         │ same deployment
+             ▼                                  ▼
+      ┌──────────────┐              ┌──────────────────┐
+      │ Neon Postgres │              │ In-process cron   │
+      │ (serverless)  │              │ handler           │
+      └──────────────┘              └──────────────────┘
+
+External (outbound from Vercel):
+  • api.github.com (OAuth + releases)
+  • openrouter.ai/api/v1 (LLM)
+  • (optional) dash.better-auth.com via plugin</div>
+
+    <h2 id="components">2. Deployed components</h2>
+    <table>
+      <thead><tr><th>Component</th><th>Host</th><th>Config source</th></tr></thead>
+      <tbody>
+        <tr><td>Web + API + actions</td><td>Vercel project</td><td>Git push, <code>next build</code></td></tr>
+        <tr><td>Scheduled ingestion</td><td>Vercel Cron</td><td><code>vercel.json</code></td></tr>
+        <tr><td>Primary database</td><td>Neon</td><td><code>DATABASE_URL</code></td></tr>
+        <tr><td>Product analytics</td><td>Vercel Analytics</td><td><code>@vercel/analytics</code> in root layout</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="cron">3. Cron schedule (source of truth)</h2>
+    <pre>{
+  "crons": [{ "path": "/api/cron/fetch-releases", "schedule": "0 0,12 * * *" }]
+}</pre>
+    <p>Runs at <strong>00:00 and 12:00 UTC</strong> daily. Authenticated with <code>Authorization: Bearer &lt;CRON_SECRET&gt;</code> (timing-safe compare in route handler).</p>
+    <div class="callout">
+      <strong>Documentation drift</strong>
+      Some marketing copy may still say “every 4 hours”. Trust <code>vercel.json</code> and this doc.
+    </div>
+
+    <h2 id="env">4. Environment variables by runtime</h2>
+    <table>
+      <thead><tr><th>Variable</th><th>Build</th><th>Server runtime</th><th>Cron</th><th>Required prod</th></tr></thead>
+      <tbody>
+        <tr><td><code>DATABASE_URL</code></td><td>—</td><td>yes</td><td>yes</td><td>yes</td></tr>
+        <tr><td><code>BETTER_AUTH_SECRET</code></td><td>—</td><td>yes</td><td>—</td><td>yes</td></tr>
+        <tr><td><code>BETTER_AUTH_URL</code></td><td>—</td><td>yes</td><td>—</td><td>yes (trusted origin)</td></tr>
+        <tr><td><code>NEXT_PUBLIC_APP_URL</code></td><td>yes (inlined)</td><td>yes</td><td>—</td><td>yes</td></tr>
+        <tr><td><code>GITHUB_CLIENT_ID/SECRET</code></td><td>—</td><td>yes</td><td>—</td><td>yes (only sign-in)</td></tr>
+        <tr><td><code>GITHUB_TOKEN</code></td><td>—</td><td>yes</td><td>yes</td><td>recommended</td></tr>
+        <tr><td><code>OPENROUTER_API_KEY</code></td><td>—</td><td>yes</td><td>yes</td><td>yes for AI</td></tr>
+        <tr><td><code>OPENROUTER_MODEL</code></td><td>—</td><td>yes</td><td>yes</td><td>no (default deepseek)</td></tr>
+        <tr><td><code>CRON_SECRET</code></td><td>—</td><td>yes</td><td>yes (Vercel injects Authorization)</td><td>yes</td></tr>
+        <tr><td><code>BETTER_AUTH_API_KEY</code></td><td>—</td><td>yes</td><td>—</td><td>optional (Dash plugin)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="deploy">5. Production deploy checklist</h2>
+    <ol>
+      <li>Connect GitHub repo to Vercel; set all production env vars.</li>
+      <li>Run <code>pnpm db:migrate</code> against production <code>DATABASE_URL</code>.</li>
+      <li>If registry empty: <code>pnpm db:seed</code>.</li>
+      <li>GitHub OAuth callback URL: <code>https://&lt;domain&gt;/api/auth/callback/github</code>.</li>
+      <li>Set <code>BETTER_AUTH_URL</code> and <code>NEXT_PUBLIC_APP_URL</code> to the canonical HTTPS origin.</li>
+      <li>Verify cron execution in Vercel dashboard; spot-check <code>release_fetch_runs</code>.</li>
+    </ol>
+
+    <h2 id="neon">6. Neon + serverless driver</h2>
+    <p>
+      The app uses <code>drizzle-orm/neon-http</code> — each query batch is an HTTP request to Neon, not a long-lived TCP pool.
+      Implications: favor batched reads in one handler (<code>Promise.all</code> on dashboard); avoid chatty N+1 in hot paths;
+      cold starts add latency to first DB call after idle.
+    </p>
+
+    <h2 id="failure">7. Failure domains</h2>
+    <table>
+      <thead><tr><th>Failure</th><th>User impact</th><th>System behavior</th></tr></thead>
+      <tbody>
+        <tr><td>Neon unavailable</td><td>App errors on DB access</td><td>No local cache fallback</td></tr>
+        <tr><td>GitHub API 403/rate limit</td><td>Missing new releases for affected tech</td><td>Per-tech error in fetch run details</td></tr>
+        <tr><td>OpenRouter down / invalid key</td><td>No new summarized releases</td><td>Insert skipped after failed summarize</td></tr>
+        <tr><td>Cron timeout (60s)</td><td>Partial scan</td><td>Run may end incomplete; check <code>release_fetch_runs</code></td></tr>
+        <tr><td>Missing CRON_SECRET</td><td>No scheduled ingest</td><td>Cron route returns 500 misconfigured</td></tr>
+        <tr><td>Auth misconfig</td><td>Cannot sign in</td><td>Production throws at <code>getAuth()</code> init if secrets missing</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="selfhost">8. Self-hosting notes</h2>
+    <p>
+      README targets Vercel + Neon free tier. Any Node host running <code>next start</code> works if you can:
+      (1) provide <code>DATABASE_URL</code>, (2) schedule HTTP cron to <code>/api/cron/fetch-releases</code> with <code>CRON_SECRET</code>,
+      (3) configure GitHub OAuth and public URL env vars.
+    </p>
+
+    <footer>See also: <a href="integrations.html">integrations</a>, <a href="security.html">security</a>, <code>docs/operations/deployment.md</code></footer>
+  </div>
+</body>
+</html>

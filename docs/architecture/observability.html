@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — Observability</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← Architecture hub</a></p>
+    <h1>Observability</h1>
+    <p class="meta"><strong>Status:</strong> current · <strong>Last verified:</strong> 2026-06-04</p>
+
+    <p>What you can see today when operating StackPulse, what is missing, and sensible future additions.</p>
+
+    <h2 id="today">1. What exists today</h2>
+    <table>
+      <thead><tr><th>Signal</th><th>Implementation</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Page analytics</td><td><code>@vercel/analytics</code> in <code>src/app/layout.tsx</code></td><td>No custom events; no env vars</td></tr>
+        <tr><td>Ingestion audit</td><td><code>release_fetch_runs</code> table</td><td>Per-run stats + JSON <code>details</code> per tech; <strong>no dashboard UI</strong></td></tr>
+        <tr><td>Application logs</td><td><code>console.error</code> in catch blocks</td><td>Vercel function logs; unstructured</td></tr>
+        <tr><td>Deploy / cron health</td><td>Vercel project dashboard</td><td>Cron invocation history, function errors</td></tr>
+        <tr><td>DB inspection</td><td><code>pnpm db:studio</code> (Drizzle Studio)</td><td>Local/dev; manual</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="missing">2. What is not implemented</h2>
+    <table>
+      <thead><tr><th>Capability</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Sentry / error tracking</td><td><span class="badge badge-no">Not in repo</span></td></tr>
+        <tr><td>PostHog / product analytics</td><td><span class="badge badge-no">Not in repo</span></td></tr>
+        <tr><td>Structured logging (pino, etc.)</td><td><span class="badge badge-no">Not in repo</span></td></tr>
+        <tr><td>OpenTelemetry / traces</td><td><span class="badge badge-no">Not in repo</span></td></tr>
+        <tr><td>Metrics (Prometheus, etc.)</td><td><span class="badge badge-no">Not in repo</span></td></tr>
+        <tr><td>Uptime monitoring</td><td><span class="badge badge-no">Not in repo</span></td></tr>
+        <tr><td>Alerting on cron failure</td><td><span class="badge badge-no">Manual</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="audit">3. Using <code>release_fetch_runs</code> for ops</h2>
+    <p>Each cron or custom-repo ingestion creates a row:</p>
+    <table>
+      <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>trigger</code></td><td><code>cron</code> or <code>custom_repo</code></td></tr>
+        <tr><td><code>status</code></td><td><code>running</code> → <code>completed</code> or <code>completed_with_errors</code></td></tr>
+        <tr><td><code>technologies_scanned</code></td><td>Count of techs processed</td></tr>
+        <tr><td><code>releases_inserted</code></td><td>Sum of new rows</td></tr>
+        <tr><td><code>errors</code></td><td>Per-tech error count aggregate</td></tr>
+        <tr><td><code>details</code></td><td>JSON array: <code>{ tech, inserted, errors }</code> per stack</td></tr>
+        <tr><td><code>started_at</code> / <code>finished_at</code></td><td>Duration analysis</td></tr>
+      </tbody>
+    </table>
+    <pre>-- Example: recent cron runs (run in SQL client / Studio)
+SELECT id, trigger, status, releases_inserted, errors, started_at, finished_at
+FROM release_fetch_runs
+ORDER BY started_at DESC
+LIMIT 20;</pre>
+
+    <h2 id="manual">4. Manual verification playbook</h2>
+    <ol>
+      <li><code>pnpm exec tsc --noEmit && pnpm lint && pnpm build</code></li>
+      <li>Trigger cron locally: <code>curl -H "Authorization: Bearer %CRON_SECRET%" http://localhost:3000/api/cron/fetch-releases</code></li>
+      <li>Inspect JSON response <code>results</code> array for per-tech errors</li>
+      <li>Confirm new rows in <code>release_updates</code> for expected tags</li>
+    </ol>
+    <p>See <code>docs/operations/verification.md</code> for full checklist.</p>
+
+    <h2 id="incident">5. Incident debugging guide</h2>
+    <table>
+      <thead><tr><th>Symptom</th><th>Check first</th></tr></thead>
+      <tbody>
+        <tr><td>No new releases</td><td>Vercel cron logs; <code>release_fetch_runs</code>; <code>GITHUB_TOKEN</code>; follower prefs exist</td></tr>
+        <tr><td>AI summaries missing</td><td><code>OPENROUTER_API_KEY</code>; function logs during ingest</td></tr>
+        <tr><td>Feed empty for user</td><td><code>user_tech_preferences</code>; importance filter; tech scope</td></tr>
+        <tr><td>Advice 429</td><td>Per-user in-memory rate limit — retry after 1h or redeploy clears maps</td></tr>
+        <tr><td>Auth failures prod</td><td><code>BETTER_AUTH_*</code>, GitHub OAuth callback URL, trusted origins</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="future">6. Recommended future observability</h2>
+    <ul>
+      <li><strong>Admin page</strong> for <code>release_fetch_runs</code> (last N runs, error highlight).</li>
+      <li><strong>Sentry</strong> (or similar) on API routes + server actions with release/tag context.</li>
+      <li><strong>Structured logs</strong> with <code>runId</code>, <code>techId</code> on ingestion paths.</li>
+      <li><strong>Cron alert</strong> — Vercel integration or external ping on non-200 cron response.</li>
+      <li><strong>OpenRouter usage</strong> — track token/cost per run if billing becomes a concern.</li>
+    </ul>
+
+    <footer>Deploy logs: Vercel dashboard · Data: <a href="../database-architecture.html">database doc</a></footer>
+  </div>
+</body>
+</html>

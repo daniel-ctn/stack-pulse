@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — Architecture Documentation</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="../README.md">docs index (markdown)</a> · <a href="../AGENT_START_HERE.md">agent start</a></p>
+    <h1>StackPulse architecture documentation</h1>
+    <p class="meta"><strong>Status:</strong> current · <strong>Last verified:</strong> 2026-06-04 · Format: HTML (open in browser)</p>
+
+    <p>
+      This folder is the <strong>architecture layer</strong> for StackPulse: how the system fits together,
+      crosses boundaries, and makes tradeoffs. Feature-level “how to implement X” detail remains in
+      <code>docs/features/*.md</code>; operations runbooks in <code>docs/operations/*.md</code>.
+    </p>
+
+    <h2>Recommended read order</h2>
+    <ol>
+      <li><a href="system-overview.html">System overview</a> — context, containers, critical paths</li>
+      <li><a href="deployment-topology.html">Deployment topology</a> — Vercel, Neon, cron, env by runtime</li>
+      <li><a href="../database-architecture.html">Database &amp; data architecture</a> — schema, indexes, data flows</li>
+      <li><a href="integrations.html">Integrations</a> — GitHub, OpenRouter, Better Auth, Vercel Cron</li>
+      <li><a href="security.html">Security</a> — auth matrix, secrets, rate limits, data isolation</li>
+      <li><a href="api-contract.html">API contract</a> — route handlers, server actions, pagination</li>
+      <li><a href="frontend-architecture.html">Frontend architecture</a> — RSC, TanStack Query, nuqs, layering</li>
+      <li><a href="observability.html">Observability</a> — what exists, gaps, future ops</li>
+      <li><a href="domain-glossary.html">Domain glossary</a> — terms used across code and docs</li>
+      <li><a href="decisions/index.html">Architecture decision records (ADRs)</a> — why, not what</li>
+    </ol>
+
+    <h2>All architecture documents</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h3><a href="system-overview.html">System overview</a></h3>
+        <p>C4-style context, runtime model, sequences, NFRs, explicit non-goals.</p>
+      </div>
+      <div class="card">
+        <h3><a href="deployment-topology.html">Deployment topology</a></h3>
+        <p>Infrastructure diagram, secrets by runtime, failure domains, self-host notes.</p>
+      </div>
+      <div class="card">
+        <h3><a href="../database-architecture.html">Database architecture</a></h3>
+        <p>Neon + Drizzle, tables, indexes, migrations, query patterns, DB caveats.</p>
+      </div>
+      <div class="card">
+        <h3><a href="integrations.html">Integrations</a></h3>
+        <p>External APIs, rate limits, when each service is called, degradation.</p>
+      </div>
+      <div class="card">
+        <h3><a href="security.html">Security</a></h3>
+        <p>Authn/z matrix, cron protection, PII, deletion, public exposure.</p>
+      </div>
+      <div class="card">
+        <h3><a href="api-contract.html">API contract</a></h3>
+        <p>HTTP routes, server actions, errors, cursor pagination format.</p>
+      </div>
+      <div class="card">
+        <h3><a href="frontend-architecture.html">Frontend architecture</a></h3>
+        <p>App Router split, feed hydration, URL state, virtualization.</p>
+      </div>
+      <div class="card">
+        <h3><a href="observability.html">Observability</a></h3>
+        <p>Analytics, audit tables, logging reality, incident gaps.</p>
+      </div>
+      <div class="card">
+        <h3><a href="domain-glossary.html">Domain glossary</a></h3>
+        <p>Stack, technology, signal, importance, fetch run, and more.</p>
+      </div>
+      <div class="card">
+        <h3><a href="decisions/index.html">ADRs</a></h3>
+        <p>Accepted architectural decisions with context and consequences.</p>
+      </div>
+    </div>
+
+    <h2>Related markdown docs</h2>
+    <table>
+      <thead><tr><th>Area</th><th>Path</th></tr></thead>
+      <tbody>
+        <tr><td>UI design system</td><td><code>docs/DESIGN_SYSTEM.md</code></td></tr>
+        <tr><td>Feature deep-dives</td><td><code>docs/features/</code></td></tr>
+        <tr><td>Operations</td><td><code>docs/operations/</code></td></tr>
+        <tr><td>Agent entry</td><td><code>docs/AGENT_START_HERE.md</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <strong>Maintenance</strong>
+      Update these HTML files when routes, env vars, schema, auth, cron schedule, or integration behavior changes.
+      Trust <code>src/</code> over docs when they disagree.
+    </div>
+
+    <footer>StackPulse architecture hub · <a href="index.html">index.html</a></footer>
+  </div>
+</body>
+</html>

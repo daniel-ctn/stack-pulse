@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR-001 — Drizzle + Neon HTTP</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← ADRs</a> · <a href="../index.html">Architecture hub</a></p>
+    <h1>ADR-001: Drizzle ORM with Neon HTTP driver</h1>
+    <p class="meta"><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-04</p>
+
+    <h2>Context</h2>
+    <p>StackPulse runs on Vercel serverless functions and needs typed SQL access to Postgres. Prisma is not used in this repo. Connection pooling on serverless is historically awkward (too many connections, cold starts).</p>
+
+    <h2>Decision</h2>
+    <ul>
+      <li>Use <strong>Drizzle ORM</strong> with schema in <code>src/db/schema.ts</code>.</li>
+      <li>Use <strong>Neon</strong> as hosted Postgres.</li>
+      <li>Connect via <code>@neondatabase/serverless</code> and <code>drizzle-orm/neon-http</code> (HTTP per query), not a long-lived node-postgres pool in the app.</li>
+      <li>Migrations via Drizzle Kit in <code>drizzle/</code>.</li>
+    </ul>
+
+    <h2>Consequences</h2>
+    <p><strong>Positive:</strong> Lightweight bundle for serverless; schema-as-code; SQL migrations in repo; good TypeScript inference.</p>
+    <p><strong>Negative:</strong> HTTP latency per query batch; no built-in cross-request pool; developers must batch reads and avoid chatty loops.</p>
+    <p><strong>Neutral:</strong> Team must learn Drizzle query API; agents should not assume Prisma patterns.</p>
+
+    <footer>ADR-001</footer>
+  </div>
+</body>
+</html>

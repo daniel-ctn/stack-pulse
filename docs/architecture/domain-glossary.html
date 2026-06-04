@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — Domain Glossary</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← Architecture hub</a></p>
+    <h1>Domain glossary</h1>
+    <p class="meta"><strong>Status:</strong> current · <strong>Last verified:</strong> 2026-06-04</p>
+
+    <p>Terms used consistently in code, UI copy, and documentation.</p>
+
+    <table>
+      <thead><tr><th>Term</th><th>Meaning</th><th>Code / table</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Stack</strong></td>
+          <td>Product concept: the set of technologies a user watches. Often used in UI (“configure stack”, “empty stack”).</td>
+          <td>Implemented as rows in <code>user_tech_preferences</code></td>
+        </tr>
+        <tr>
+          <td><strong>Technology (tech)</strong></td>
+          <td>A single tracked GitHub repository (Next.js, React, or a custom repo). Has name, slug, URL, category.</td>
+          <td><code>technologies</code></td>
+        </tr>
+        <tr>
+          <td><strong>Registry technology</strong></td>
+          <td>Pre-seeded stack from <code>pnpm db:seed</code> (20 packages). <code>category</code> is framework, library, etc.</td>
+          <td><code>technologies</code> where <code>category != 'custom'</code></td>
+        </tr>
+        <tr>
+          <td><strong>Custom technology</strong></td>
+          <td>User-added GitHub repo. <code>category = 'custom'</code>. Max 5 per user.</td>
+          <td><code>addCustomTech</code></td>
+        </tr>
+        <tr>
+          <td><strong>Follow / preference</strong></td>
+          <td>Link between user and technology they want release updates for.</td>
+          <td><code>user_tech_preferences</code></td>
+        </tr>
+        <tr>
+          <td><strong>Release / release update</strong></td>
+          <td>One version tag from GitHub, plus AI summary and structured fields. Not renamed “article” or “post”.</td>
+          <td><code>release_updates</code></td>
+        </tr>
+        <tr>
+          <td><strong>Version</strong></td>
+          <td>Git tag name (<code>tag_name</code> from GitHub). Unique per technology.</td>
+          <td><code>release_updates.version</code></td>
+        </tr>
+        <tr>
+          <td><strong>Signal</strong></td>
+          <td>Semantic tag: <code>breaking</code>, <code>security</code>, <code>deprecation</code>, <code>migration</code>, <code>feature</code>. Stored in <code>release_signals</code> and/or inferred from jsonb arrays.</td>
+          <td>Feed filter <code>signal</code></td>
+        </tr>
+        <tr>
+          <td><strong>Importance</strong></td>
+          <td>AI-assigned priority: low, medium, high, critical. Feed can hide low via “medium+” filter.</td>
+          <td><code>importance_level</code> enum</td>
+        </tr>
+        <tr>
+          <td><strong>Read state</strong></td>
+          <td>Per-user marker that a release was seen in the feed.</td>
+          <td><code>user_read_releases</code></td>
+        </tr>
+        <tr>
+          <td><strong>Feed</strong></td>
+          <td>Chronological, filterable list of releases. Dashboard for users; API for infinite scroll.</td>
+          <td><code>getReleaseFeedPage</code></td>
+        </tr>
+        <tr>
+          <td><strong>Public stack page</strong></td>
+          <td>SEO page at <code>/stacks/[slug]</code> showing up to 20 releases for one technology.</td>
+          <td><code>PUBLIC_STACK_RELEASE_LIMIT = 20</code></td>
+        </tr>
+        <tr>
+          <td><strong>Ingestion / fetch run</strong></td>
+          <td>Batch job that polls GitHub and inserts new summarized releases.</td>
+          <td><code>release_fetch_runs</code>, cron or custom_repo trigger</td>
+        </tr>
+        <tr>
+          <td><strong>Trigger</strong></td>
+          <td>Why a fetch run started: <code>cron</code> (scheduled) or <code>custom_repo</code> (immediate on add).</td>
+          <td><code>release_fetch_runs.trigger</code></td>
+        </tr>
+        <tr>
+          <td><strong>Digest subscriber</strong></td>
+          <td>Email address stored for a future weekly digest. May be global or tied to <code>stack_slug</code>.</td>
+          <td><code>digest_subscribers</code> — no emails sent yet</td>
+        </tr>
+        <tr>
+          <td><strong>Release advice</strong></td>
+          <td>On-demand AI Q&amp;A about upgrading to a specific release (not stored in DB).</td>
+          <td><code>/api/release-advice</code></td>
+        </tr>
+        <tr>
+          <td><strong>Slug</strong></td>
+          <td>URL-safe identifier for a technology (<code>nextjs</code>, <code>my-fork</code>). Used in routes and digest.</td>
+          <td><code>technologies.slug</code></td>
+        </tr>
+        <tr>
+          <td><strong>Cursor</strong></td>
+          <td>Opaque pagination token for feed (base64url JSON of date + id).</td>
+          <td><code>nextCursor</code> in API</td>
+        </tr>
+        <tr>
+          <td><strong>Scope (feed)</strong></td>
+          <td><code>user</code> — followed techs only; <code>public</code> — all releases in DB.</td>
+          <td><code>ReleaseFeedScope</code> in <code>release-feed.ts</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer><a href="../database-architecture.html">Database architecture</a> for physical schema detail</footer>
+  </div>
+</body>
+</html>

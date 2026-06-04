@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — Integrations</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← Architecture hub</a></p>
+    <h1>Integrations</h1>
+    <p class="meta"><strong>Status:</strong> current · <strong>Last verified:</strong> 2026-06-04</p>
+
+    <p>StackPulse depends on four external integration classes. This document is the cross-cutting reference; feature markdown docs add implementation detail.</p>
+
+    <h2 id="github">1. GitHub</h2>
+    <h3>1.1 OAuth (Better Auth)</h3>
+    <table>
+      <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Purpose</td><td>Only sign-in method</td></tr>
+        <tr><td>Config</td><td><code>GITHUB_CLIENT_ID</code>, <code>GITHUB_CLIENT_SECRET</code></td></tr>
+        <tr><td>Dev behavior</td><td>Provider omitted if env missing (non-production)</td></tr>
+        <tr><td>Prod behavior</td><td>Required — <code>getAuth()</code> throws if missing</td></tr>
+        <tr><td>Callback</td><td><code>/api/auth/callback/github</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>1.2 Releases API (ingestion)</h3>
+    <table>
+      <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Module</td><td><code>src/lib/github.ts</code> — <code>fetchLatestReleases(repoUrl, limit)</code></td></tr>
+        <tr><td>Per-tech limit</td><td><code>RELEASES_PER_TECH = 5</code></td></tr>
+        <tr><td>Publishability</td><td>Skip drafts; require <code>published_at</code> and <code>tag_name</code></td></tr>
+        <tr><td>Rate limit</td><td>60 req/h anonymous; 5000/h with <code>GITHUB_TOKEN</code> Bearer</td></tr>
+        <tr><td>User-Agent</td><td><code>StackPulse</code> on repo verification fetch</td></tr>
+      </tbody>
+    </table>
+
+    <h3>1.3 Repo verification (custom stack)</h3>
+    <p><code>addCustomTech</code> calls <code>GET https://api.github.com/repos/{owner}/{repo}</code> with 8s timeout before insert.</p>
+
+    <h2 id="openrouter">2. OpenRouter (LLM)</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Client</td><td>OpenAI SDK → <code>https://openrouter.ai/api/v1</code> (<code>src/lib/ai.ts</code>)</td></tr>
+        <tr><td>API key</td><td><code>OPENROUTER_API_KEY</code> (required for summarisation)</td></tr>
+        <tr><td>Model</td><td><code>OPENROUTER_MODEL</code> or default <code>deepseek/deepseek-chat</code></td></tr>
+        <tr><td>Referer</td><td><code>NEXT_PUBLIC_APP_URL</code> sent as HTTP referer header</td></tr>
+      </tbody>
+    </table>
+
+    <h3>When AI runs</h3>
+    <table>
+      <thead><tr><th>Call</th><th>Trigger</th><th>Persisted</th></tr></thead>
+      <tbody>
+        <tr><td><code>summarizeRelease()</code></td><td>Cron ingest, custom repo add</td><td>Yes → <code>release_updates</code> (+ model, summarized_at)</td></tr>
+        <tr><td><code>adviseOnRelease()</code></td><td><code>POST /api/release-advice</code></td><td>No — response only</td></tr>
+        <tr><td>Backfill script</td><td><code>pnpm releases:backfill</code></td><td>Updates existing rows</td></tr>
+      </tbody>
+    </table>
+
+    <p>Outputs validated with Zod. Untrusted release bodies are treated as prompt data, not instructions.</p>
+
+    <h2 id="better-auth">3. Better Auth</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Adapter</td><td><code>drizzleAdapter(getDb(), { provider: 'pg', schema: {...} })</code></td></tr>
+        <tr><td>Tables</td><td><code>users</code>, <code>accounts</code>, <code>sessions</code>, <code>verifications</code></td></tr>
+        <tr><td>Route</td><td><code>/api/auth/[...all]</code></td></tr>
+        <tr><td>Plugins</td><td><code>nextCookies()</code>; optional <code>dash</code> with <code>BETTER_AUTH_API_KEY</code></td></tr>
+        <tr><td>Trusted origins</td><td><code>BETTER_AUTH_URL</code>, <code>NEXT_PUBLIC_APP_URL</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="vercel-cron">4. Vercel Cron</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Path</td><td><code>/api/cron/fetch-releases</code></td></tr>
+        <tr><td>Schedule</td><td><code>0 0,12 * * *</code> (twice daily UTC)</td></tr>
+        <tr><td>Auth</td><td>Bearer <code>CRON_SECRET</code>; timing-safe comparison</td></tr>
+        <tr><td>Scope</td><td>Only <code>technologies</code> with ≥1 row in <code>user_tech_preferences</code></td></tr>
+        <tr><td>Parallelism</td><td>Chunks of 6 techs via <code>Promise.allSettled</code></td></tr>
+        <tr><td>Audit</td><td><code>release_fetch_runs</code> with per-tech JSON details</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="analytics">5. Vercel Analytics</h2>
+    <p>Included in <code>src/app/layout.tsx</code>. No extra env vars. Page views only — not error tracking or custom events.</p>
+
+    <h2 id="degradation">6. Degradation matrix</h2>
+    <table>
+      <thead><tr><th>Integration down</th><th>Still works</th><th>Broken / degraded</th></tr></thead>
+      <tbody>
+        <tr><td>GitHub API</td><td>Read cached releases in DB</td><td>New ingestion for affected repos</td></tr>
+        <tr><td>OpenRouter</td><td>Read existing summaries</td><td>New releases not inserted (AI required before insert)</td></tr>
+        <tr><td>GitHub OAuth</td><td>Public pages, digest signup</td><td>Sign-in, personalized feed, advice</td></tr>
+        <tr><td>Neon</td><td>—</td><td>Entire app data layer</td></tr>
+        <tr><td>Cron only</td><td>Manual curl cron; custom repo still ingests on add</td><td>Scheduled refresh of followed stacks</td></tr>
+      </tbody>
+    </table>
+
+    <footer>See also: <a href="system-overview.html">system overview</a>, <code>docs/features/release-ingestion.md</code>, <code>docs/features/ai-summarization.md</code></footer>
+  </div>
+</body>
+</html>

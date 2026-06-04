@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ADR-004 — AI before insert</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <p class="nav-top"><a href="index.html">← ADRs</a></p>
+    <h1>ADR-004: AI summarisation before database insert</h1>
+    <p class="meta"><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-04</p>
+
+    <h2>Context</h2>
+    <p>Releases could be stored raw first and summarised asynchronously (queue/worker). StackPulse is serverless-first with no job queue in the repo.</p>
+
+    <h2>Decision</h2>
+    <ul>
+      <li>For each new <code>(tech_id, version)</code>, call <code>summarizeRelease()</code> <strong>before</strong> <code>INSERT</code>.</li>
+      <li>Skip insert if summarisation fails (error counted per tech).</li>
+      <li>Use <code>onConflictDoNothing</code> on unique <code>(tech_id, version)</code> for races.</li>
+      <li>Provide <code>pnpm releases:backfill</code> for retroactive summarisation of existing rows.</li>
+    </ul>
+
+    <h2>Consequences</h2>
+    <p><strong>Positive:</strong> Feed never shows empty summaries; simpler mental model; no worker infrastructure.</p>
+    <p><strong>Negative:</strong> Ingestion latency tied to LLM; cron more likely to hit 60s timeout when many new releases land at once; OpenRouter outage blocks new rows entirely.</p>
+    <p><strong>Future:</strong> A queue would supersede this ADR if ingest volume or timeout pressure grows.</p>
+
+    <footer>ADR-004</footer>
+  </div>
+</body>
+</html>
