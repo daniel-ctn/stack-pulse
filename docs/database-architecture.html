@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StackPulse — Database &amp; Data Architecture</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #161b26;
+      --border: #2a3142;
+      --text: #e8eaef;
+      --muted: #9aa3b5;
+      --accent: #84cc16;
+      --accent-dim: #4d7c0f;
+      --code-bg: #1a2030;
+      --warn: #fbbf24;
+      --danger: #fb7185;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 0.25rem; }
+    .meta { color: var(--muted); font-size: 0.875rem; margin-bottom: 2rem; }
+    h2 {
+      font-size: 1.25rem;
+      margin: 2.5rem 0 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--accent);
+    }
+    h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
+    p { margin: 0.5rem 0 1rem; }
+    a { color: var(--accent); }
+    ul, ol { margin: 0.5rem 0 1rem; padding-left: 1.35rem; }
+    li { margin: 0.25rem 0; }
+    code, .path {
+      font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+      font-size: 0.88em;
+      background: var(--code-bg);
+      padding: 0.12em 0.35em;
+      border-radius: 4px;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1rem 0;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--surface); color: var(--muted); font-weight: 600; }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.15em 0.45em;
+      border-radius: 4px;
+      margin-right: 0.35rem;
+    }
+    .badge-pk { background: #3b82f6; color: #fff; }
+    .badge-uk { background: #8b5cf6; color: #fff; }
+    .badge-idx { background: var(--accent-dim); color: #ecfccb; }
+    .badge-fk { background: #0d9488; color: #fff; }
+    .badge-gin { background: #b45309; color: #fff; }
+    .callout {
+      border-left: 3px solid var(--warn);
+      background: rgba(251, 191, 36, 0.08);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .callout.danger { border-color: var(--danger); background: rgba(251, 113, 133, 0.08); }
+    .callout strong { display: block; margin-bottom: 0.25rem; }
+    nav.toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0 2rem;
+    }
+    nav.toc ol { margin: 0; }
+    nav.toc a { text-decoration: none; }
+    nav.toc a:hover { text-decoration: underline; }
+    .diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      line-height: 1.35;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>StackPulse — Database &amp; Data Architecture</h1>
+    <p class="meta">
+      <strong>Status:</strong> current &nbsp;|&nbsp;
+      <strong>Verified against code:</strong> 2026-06-04 &nbsp;|&nbsp;
+      Source of truth: <code>src/db/schema.ts</code>, <code>src/db/index.ts</code>, <code>drizzle/</code>
+    </p>
+
+    <p>
+      StackPulse stores GitHub release metadata, AI-generated summaries, user preferences, and auth sessions in
+      <strong>PostgreSQL on Neon</strong>, accessed through <strong>Drizzle ORM</strong> and the
+      <strong>Neon serverless HTTP driver</strong>. This document describes architecture, entity relationships,
+      indexes, data flows, query patterns, optimizations, and operational caveats.
+    </p>
+
+    <nav class="toc" aria-label="Table of contents">
+      <strong>Contents</strong>
+      <ol>
+        <li><a href="#stack">Technology stack</a></li>
+        <li><a href="#architecture">High-level architecture</a></li>
+        <li><a href="#er">Entity relationships</a></li>
+        <li><a href="#tables">Tables &amp; columns</a></li>
+        <li><a href="#indexes">Indexes &amp; constraints</a></li>
+        <li><a href="#enums">Enums &amp; JSONB</a></li>
+        <li><a href="#migrations">Migrations &amp; setup</a></li>
+        <li><a href="#flows">Data flows</a></li>
+        <li><a href="#queries">Query patterns &amp; performance</a></li>
+        <li><a href="#caveats">Technical caveats</a></li>
+        <li><a href="#ops">Operations checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="stack">1. Technology stack</h2>
+    <table>
+      <thead>
+        <tr><th>Layer</th><th>Choice</th><th>Location</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Database</td>
+          <td>PostgreSQL (hosted on Neon)</td>
+          <td><code>DATABASE_URL</code> in <code>.env</code></td>
+        </tr>
+        <tr>
+          <td>Driver</td>
+          <td><code>@neondatabase/serverless</code> + <code>drizzle-orm/neon-http</code></td>
+          <td><code>src/db/index.ts</code></td>
+        </tr>
+        <tr>
+          <td>ORM &amp; schema</td>
+          <td>Drizzle ORM</td>
+          <td><code>src/db/schema.ts</code></td>
+        </tr>
+        <tr>
+          <td>Migrations</td>
+          <td>Drizzle Kit</td>
+          <td><code>drizzle.config.ts</code>, SQL in <code>drizzle/*.sql</code></td>
+        </tr>
+        <tr>
+          <td>Auth persistence</td>
+          <td>Better Auth with <code>drizzleAdapter</code></td>
+          <td><code>src/lib/auth.ts</code></td>
+        </tr>
+        <tr>
+          <td>Not used</td>
+          <td>Prisma, connection pooling libraries (e.g. PgBouncer client in app), edge Redis cache</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Database client singleton</h3>
+    <p>
+      <code>getDb()</code> lazily constructs a single Drizzle instance wired to Neon HTTP. There is no separate
+      connection pool in application code—the Neon serverless driver issues HTTP requests per query batch.
+      Missing <code>DATABASE_URL</code> throws at first access.
+    </p>
+    <pre>import { neon } from '@neondatabase/serverless'
+import { drizzle } from 'drizzle-orm/neon-http'
+
+db = drizzle(neon(databaseUrl), { schema })</pre>
+
+    <h2 id="architecture">2. High-level architecture</h2>
+    <p>Data moves through four main pipelines:</p>
+    <ol>
+      <li><strong>Auth</strong> — GitHub OAuth via Better Auth writes to <code>users</code>, <code>accounts</code>, <code>sessions</code>, <code>verifications</code>.</li>
+      <li><strong>Ingestion</strong> — Cron or custom-repo actions fetch GitHub releases, call OpenRouter for summaries, insert into <code>release_updates</code>, audit in <code>release_fetch_runs</code>.</li>
+      <li><strong>Personalization</strong> — <code>user_tech_preferences</code> scopes the dashboard feed; <code>user_read_releases</code> tracks read state.</li>
+      <li><strong>Public &amp; marketing</strong> — Registry stacks in <code>technologies</code>; public pages aggregate releases; <code>digest_subscribers</code> captures emails (no sender implemented).</li>
+    </ol>
+
+    <div class="diagram">┌─────────────────┐     GitHub API      ┌──────────────────┐
+│ Vercel Cron     │ ──────────────────► │ release-ingestion │
+│ /api/cron/...   │                     │ processTech...    │
+└────────┬────────┘                     └────────┬─────────┘
+         │                                         │ OpenRouter (AI)
+         │                                         ▼
+         │                              ┌──────────────────┐
+         │                              │  release_updates  │
+         │                              └────────┬─────────┘
+         │                                       │
+┌────────▼────────┐   Drizzle (neon-http)       │
+│  Neon Postgres  │◄────────────────────────────┘
+└────────┬────────┘
+         │
+    ┌────┴────┬──────────────┬─────────────────┐
+    ▼         ▼              ▼                 ▼
+ Better   Dashboard      /api/releases    /stacks (SEO)
+ Auth     SSR + RQ       pagination       public queries</div>
+
+    <h2 id="er">3. Entity relationships</h2>
+    <p>Core domain tables and foreign keys (all user-linked rows cascade on user delete):</p>
+    <div class="diagram">users ──┬── accounts
+        ├── sessions
+        ├── verifications (Better Auth; no FK to users in schema)
+        ├── user_tech_preferences ──► technologies
+        └── user_read_releases ──► release_updates ──► technologies
+
+release_fetch_runs  (standalone audit log, no FK)
+
+digest_subscribers  (standalone; optional stack_slug references technologies.slug logically)</div>
+
+    <h2 id="tables">4. Tables &amp; columns</h2>
+
+    <h3>4.1 <code>users</code> (Better Auth)</h3>
+    <table>
+      <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>text</td><td><span class="badge badge-pk">PK</span></td></tr>
+        <tr><td>email</td><td>text</td><td><span class="badge badge-uk">UNIQUE</span> not null</td></tr>
+        <tr><td>name, image</td><td>text</td><td>nullable</td></tr>
+        <tr><td>email_verified</td><td>boolean</td><td>default false</td></tr>
+        <tr><td>created_at, updated_at</td><td>timestamp</td><td>default now()</td></tr>
+      </tbody>
+    </table>
+    <p>Billing columns (<code>subscription_status</code>, Lemon Squeezy IDs) were removed in migration <code>0002</code>.</p>
+
+    <h3>4.2 <code>accounts</code>, <code>sessions</code>, <code>verifications</code> (Better Auth)</h3>
+    <p>
+      Standard Better Auth shape. <code>accounts.user_id</code> and <code>sessions.user_id</code> reference
+      <code>users.id</code> with <code>ON DELETE CASCADE</code>. OAuth tokens live in <code>accounts</code>.
+    </p>
+
+    <h3>4.3 <code>technologies</code></h3>
+    <table>
+      <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>uuid</td><td><span class="badge badge-pk">PK</span> default <code>gen_random_uuid()</code></td></tr>
+        <tr><td>name</td><td>text</td><td><span class="badge badge-uk">UNIQUE</span></td></tr>
+        <tr><td>slug</td><td>text</td><td><span class="badge badge-uk">UNIQUE</span> — used in URLs and digest</td></tr>
+        <tr><td>github_repo_url</td><td>text</td><td>canonical GitHub repo URL</td></tr>
+        <tr><td>description, category</td><td>text</td><td>nullable; <code>category = 'custom'</code> for user-added repos</td></tr>
+        <tr><td>created_at</td><td>timestamp</td><td></td></tr>
+      </tbody>
+    </table>
+    <p>Seed script inserts 20 registry stacks (idempotent by slug). Custom repos share the same table with generated slugs.</p>
+
+    <h3>4.4 <code>user_tech_preferences</code></h3>
+    <table>
+      <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>user_id, tech_id</td><td>text, uuid</td><td><span class="badge badge-pk">PK</span> composite; both <span class="badge badge-fk">FK</span> cascade</td></tr>
+        <tr><td>created_at</td><td>timestamp</td><td></td></tr>
+      </tbody>
+    </table>
+    <p>App limits: max 30 stacks per user, max 5 with <code>category = 'custom'</code> (<code>src/lib/actions.ts</code>).</p>
+
+    <h3>4.5 <code>release_updates</code> (central fact table)</h3>
+    <table>
+      <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>uuid</td><td><span class="badge badge-pk">PK</span></td></tr>
+        <tr><td>tech_id</td><td>uuid</td><td><span class="badge badge-fk">FK</span> → technologies, cascade delete</td></tr>
+        <tr><td>version</td><td>text</td><td>Git tag; unique per tech</td></tr>
+        <tr><td>title, summary</td><td>text</td><td>display + AI summary</td></tr>
+        <tr><td>new_features, breaking_changes, security_notes, deprecations, migration_steps</td><td>jsonb</td><td>string[] in TypeScript</td></tr>
+        <tr><td>impact_summary, recommended_action</td><td>text</td><td>AI narrative fields</td></tr>
+        <tr><td>release_signals</td><td>jsonb</td><td>string[] — tags like breaking, security, migration</td></tr>
+        <tr><td>code_snippet</td><td>text</td><td>optional AI excerpt</td></tr>
+        <tr><td>importance_level</td><td>enum</td><td>low | medium | high | critical</td></tr>
+        <tr><td>summary_model, summarized_at</td><td>text, timestamp</td><td>AI provenance</td></tr>
+        <tr><td>raw_release_body</td><td>text</td><td>full GitHub release body (can be large)</td></tr>
+        <tr><td>is_prerelease</td><td>boolean</td><td>default false</td></tr>
+        <tr><td>raw_release_url</td><td>text</td><td>link to GitHub release</td></tr>
+        <tr><td>published_at</td><td>timestamp</td><td>from GitHub; drives feed ordering</td></tr>
+        <tr><td>fetched_at, created_at</td><td>timestamp</td><td>ingestion timestamps</td></tr>
+      </tbody>
+    </table>
+
+    <h3>4.6 <code>user_read_releases</code></h3>
+    <p>Composite PK <code>(user_id, release_id)</code>. Insert-on-conflict-do-nothing for bulk mark-read. Unread filter uses LEFT JOIN + <code>IS NULL</code> on read row.</p>
+
+    <h3>4.7 <code>release_fetch_runs</code></h3>
+    <p>
+      Audit log per ingestion run: <code>trigger</code> (e.g. <code>cron</code>, <code>custom_repo</code>),
+      <code>status</code>, counts, <code>details</code> jsonb array of per-tech results. No UI yet; table exists for observability.
+    </p>
+
+    <h3>4.8 <code>digest_subscribers</code></h3>
+    <p>
+      Email capture for future digest. <code>email</code> unique; optional <code>stack_slug</code>; <code>source</code> default
+      <code>public</code>. Upsert on email updates slug/source. <strong>No email cron or sender exists.</strong>
+    </p>
+
+    <h2 id="indexes">5. Indexes &amp; constraints</h2>
+    <p>Explicit indexes are defined in Drizzle schema and applied via migrations. Primary keys and UNIQUE constraints also create btree indexes automatically in PostgreSQL.</p>
+
+    <h3>5.1 <code>release_updates</code></h3>
+    <table>
+      <thead><tr><th>Name</th><th>Type</th><th>Columns</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>release_updates_tech_version_unique</code></td>
+          <td>UNIQUE</td>
+          <td>(tech_id, version)</td>
+          <td>Idempotent inserts; dedupe by tag per stack</td>
+        </tr>
+        <tr>
+          <td><code>release_updates_tech_published_idx</code></td>
+          <td><span class="badge badge-idx">BTREE</span></td>
+          <td>(tech_id, published_at DESC)</td>
+          <td>Per-stack release lists (public stack page)</td>
+        </tr>
+        <tr>
+          <td><code>release_updates_published_idx</code></td>
+          <td><span class="badge badge-idx">BTREE</span></td>
+          <td>(published_at DESC, id DESC)</td>
+          <td>Global feed sort + keyset pagination</td>
+        </tr>
+        <tr>
+          <td><code>release_updates_signals_idx</code></td>
+          <td><span class="badge badge-gin">GIN</span></td>
+          <td>release_signals (jsonb)</td>
+          <td><code>? </code> operator for signal filters (breaking, security, etc.)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>5.2 Other tables</h3>
+    <table>
+      <thead><tr><th>Table</th><th>Index</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>release_fetch_runs</code></td>
+          <td><code>release_fetch_runs_started_idx</code> (started_at DESC)</td>
+          <td>Future admin/history queries by recency</td>
+        </tr>
+        <tr>
+          <td><code>digest_subscribers</code></td>
+          <td><code>digest_subscribers_created_idx</code>, <code>digest_subscribers_stack_idx</code></td>
+          <td>Recency listing; filter by stack_slug</td>
+        </tr>
+        <tr>
+          <td><code>users</code></td>
+          <td>unique on email</td>
+          <td>Better Auth lookups</td>
+        </tr>
+        <tr>
+          <td><code>technologies</code></td>
+          <td>unique on name, slug</td>
+          <td>Slug used in public routes and digest validation</td>
+        </tr>
+        <tr>
+          <td><code>user_tech_preferences</code></td>
+          <td>composite PK only</td>
+          <td>Small cardinality per user; no extra index</td>
+        </tr>
+        <tr>
+          <td><code>user_read_releases</code></td>
+          <td>composite PK only</td>
+          <td>Join on (user_id, release_id) uses PK</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>5.3 Indexes not present (gaps to know)</h3>
+    <ul>
+      <li>No dedicated index on <code>technologies.slug</code> beyond UNIQUE (sufficient for equality).</li>
+      <li>No full-text search (tsvector) index — feed search uses <code>ILIKE</code> across multiple columns and jsonb cast to text.</li>
+      <li>No index on <code>importance_level</code> alone; combined with <code>tech_id</code> / date filters in practice.</li>
+      <li>Better Auth tables rely on PK; session token lookups depend on Better Auth query patterns.</li>
+    </ul>
+
+    <h2 id="enums">6. Enums &amp; JSONB conventions</h2>
+    <p><code>importance_level</code> PostgreSQL enum: <code>low</code>, <code>medium</code>, <code>high</code>, <code>critical</code>.</p>
+    <p>
+      JSONB array columns store structured AI output. <code>release_signals</code> holds normalized tags; feed UI also
+      derives signals from non-empty jsonb arrays (breaking_changes, etc.) for backward compatibility.
+    </p>
+    <p>Signal filter SQL uses GIN-friendly <code>release_signals ? 'breaking'</code> plus fallback <code>jsonb_array_length</code> checks.</p>
+
+    <h2 id="migrations">7. Migrations &amp; database setup</h2>
+
+    <h3>7.1 Migration history (ordered)</h3>
+    <table>
+      <thead><tr><th>Tag</th><th>Summary</th></tr></thead>
+      <tbody>
+        <tr><td>0000_fuzzy_calypso</td><td>Initial schema: auth, technologies, preferences, releases, read state; billing enum on users (later removed)</td></tr>
+        <tr><td>0001_remarkable_roughhouse</td><td><code>release_updates_tech_published_idx</code></td></tr>
+        <tr><td>0002_military_galactus</td><td><code>release_fetch_runs</code>; AI metadata columns on releases; drop Lemon Squeezy / subscription_status</td></tr>
+        <tr><td>0003_absurd_gunslinger</td><td>deprecations, migration_steps, impact_summary, recommended_action, release_signals</td></tr>
+        <tr><td>0004_even_cargill</td><td><code>digest_subscribers</code>; security_notes on releases</td></tr>
+        <tr><td>0005_premium_mordo</td><td>GIN on release_signals; digest subscriber indexes</td></tr>
+        <tr><td>0006_giant_cerise</td><td><code>release_updates_published_idx</code> for feed pagination</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Historical artifacts</strong>
+      <code>drizzle/meta/0000_snapshot.json</code> and <code>0001_snapshot.json</code> still mention Lemon Squeezy columns.
+      Trust <code>src/db/schema.ts</code> and applied migrations, not old snapshots.
+    </div>
+
+    <h3>7.2 Commands</h3>
+    <pre># Requires DATABASE_URL in .env
+
+pnpm db:push          # dev: push schema without migration files
+pnpm db:generate      # after editing schema.ts — creates SQL in drizzle/
+pnpm db:migrate       # apply migrations (production path)
+pnpm db:seed          # 20 registry technologies (idempotent)
+pnpm db:studio        # Drizzle Studio GUI
+
+pnpm releases:backfill -- --limit=10   # re-run AI on existing rows</pre>
+
+    <h3>7.3 Environment</h3>
+    <p><code>DATABASE_URL</code> — Neon connection string (required). See <code>.env.example</code> and <code>docs/operations/environment-variables.md</code>.</p>
+
+    <h2 id="flows">8. Data flows</h2>
+
+    <h3>8.1 Authentication</h3>
+    <ol>
+      <li>User signs in with GitHub → Better Auth API route.</li>
+      <li><code>drizzleAdapter(getDb())</code> maps schema: user, account, session, verification tables.</li>
+      <li>Session cookie validated on server components and API routes via <code>getAuth().api.getSession()</code>.</li>
+      <li>Account deletion: <code>delete(users)</code> cascades preferences, read state, sessions, accounts.</li>
+    </ol>
+
+    <h3>8.2 Release ingestion (write path)</h3>
+    <ol>
+      <li><strong>Cron</strong> (<code>GET /api/cron/fetch-releases</code>): Bearer <code>CRON_SECRET</code>; loads distinct <code>technologies</code> joined to <code>user_tech_preferences</code> (only followed stacks).</li>
+      <li>Creates <code>release_fetch_runs</code> row; processes techs in parallel chunks of 6 (<code>CHUNK_SIZE</code>) to balance API limits and Vercel <code>maxDuration = 60</code>.</li>
+      <li><strong>Per tech</strong> (<code>processTechReleases</code>): fetch up to 5 GitHub releases; skip drafts / missing published_at.</li>
+      <li>Check existing row by <code>(tech_id, version)</code>; if absent, call OpenRouter <code>summarizeRelease</code>, then insert with <code>onConflictDoNothing</code> on unique constraint.</li>
+      <li><strong>Custom repo</strong>: <code>addCustomTech</code> upserts technology, links preference, immediately runs same ingestion with trigger <code>custom_repo</code>.</li>
+      <li>Run finishes with aggregated stats in <code>release_fetch_runs.details</code>.</li>
+    </ol>
+
+    <h3>8.3 Dashboard feed (read path)</h3>
+    <ol>
+      <li>SSR: <code>dashboard/page.tsx</code> calls <code>getReleaseFeedPage</code> + tech options.</li>
+      <li>Client: TanStack Query hits <code>GET /api/releases</code> with same filters and cursor for infinite scroll.</li>
+      <li>Scope: authenticated users filter <code>tech_id IN (followed ids)</code>; anonymous users see all releases (public scope).</li>
+      <li>Pagination: keyset cursor (base64url JSON of <code>publishedAt</code> + <code>id</code>), page size 30, <code>ORDER BY published_at DESC, id DESC</code>.</li>
+      <li>Unread: LEFT JOIN <code>user_read_releases</code> with sentinel user id for public scope.</li>
+    </ol>
+
+    <h3>8.4 Read / unread</h3>
+    <p><code>markReleasesRead</code> verifies releases belong to user's followed techs before insert. <code>markReleaseUnread</code> deletes the junction row.</p>
+
+    <h3>8.5 Public stacks (SEO)</h3>
+    <ul>
+      <li><code>getPublicStackPage</code>: lookup by slug, then releases ordered by published_at (uses tech_published index).</li>
+      <li><code>getPublicStackIndex</code>: GROUP BY all technologies with aggregate counts and signal filters — can be heavy as data grows.</li>
+    </ul>
+
+    <h3>8.6 Release advice (AI read)</h3>
+    <p><code>POST /api/release-advice</code> loads one release joined to preferences (must follow stack). Rate limited in memory per user. Uses stored summary + raw body for context.</p>
+
+    <h3>8.7 Digest signup (write-only queue)</h3>
+    <p>Server action upserts <code>digest_subscribers</code>. In-memory IP rate limit (not durable across serverless instances).</p>
+
+    <h2 id="queries">9. Query patterns &amp; performance</h2>
+
+    <h3>9.1 Feed query (<code>getReleaseFeedPage</code>)</h3>
+    <ul>
+      <li>Joins: <code>release_updates</code> INNER JOIN <code>technologies</code>; optional LEFT JOIN read table.</li>
+      <li>Filters: importance IN list, signal (GIN/jsonb), tech slug, ILIKE search, keyset cursor.</li>
+      <li>Fetches <code>limit + 1</code> rows to detect next page without COUNT(*).</li>
+      <li><strong>Index alignment:</strong> sort matches <code>release_updates_published_idx</code>; user scope adds <code>tech_id</code> filter (tech_published index helps when filtering one stack).</li>
+    </ul>
+
+    <h3>9.2 Ingestion deduplication</h3>
+    <p>Pre-insert SELECT by tech_id + version, then insert with conflict target — redundant but avoids wasted AI calls when row exists. Race: two workers could both pass SELECT; unique constraint + <code>onConflictDoNothing</code> prevents duplicates.</p>
+
+    <h3>9.3 Neon HTTP driver implications</h3>
+    <ul>
+      <li>Each <code>getDb()</code> query round-trip is HTTP—batch related reads in one handler where possible (dashboard uses <code>Promise.all</code>).</li>
+      <li>Long cron jobs issue many sequential queries per release (select + insert); dominated by GitHub + AI latency, not DB.</li>
+      <li>No transactions wrap multi-step preference saves (delete then insert loops)—partial failure could leave inconsistent prefs until retry.</li>
+    </ul>
+
+    <h3>9.4 Search performance caveat</h3>
+    <p>
+      Text search uses leading-wildcard <code>ILIKE '%term%'</code> on several text columns and <code>::text</code> on jsonb.
+      This cannot use standard btree indexes efficiently. Acceptable at small/medium scale; consider PostgreSQL full-text search or trigram indexes if search becomes hot.
+    </p>
+
+    <h3>9.5 Storage growth</h3>
+    <p><code>raw_release_body</code> stores full release notes per row. Cron fetches 5 releases per tech per run but only inserts new versions—table grows with unique tags over time.</p>
+
+    <h2 id="caveats">10. Technical caveats</h2>
+
+    <div class="callout danger">
+      <strong>Serverless rate limits (in-memory)</strong>
+      Digest signup and release-advice rate limits use process-local <code>Map</code>s. On Vercel, limits are best-effort per instance, not global.
+    </div>
+
+    <div class="callout">
+      <strong>Cron scope</strong>
+      Only technologies with at least one follower are fetched. Registry stacks with zero followers never get releases until someone follows them.
+    </div>
+
+    <div class="callout">
+      <strong>Custom technology slug collision</strong>
+      Custom repos derive slug from display name. Two users naming repos similarly can share one <code>technologies</code> row (by design when slug matches).
+    </div>
+
+    <div class="callout">
+      <strong>Public feed when signed out</strong>
+      <code>/api/releases</code> without session uses <code>scope: public</code> — all releases, not personalized. Read filter forced to <code>all</code>.
+    </div>
+
+    <div class="callout">
+      <strong>AI before insert</strong>
+      Summarization runs before insert; failed AI skips row (errors counted per tech). Existing rows are never re-summarized on cron unless backfill script is run.
+    </div>
+
+    <div class="callout">
+      <strong>Null published_at</strong>
+      Ingestion skips releases without <code>published_at</code>. Feed ordering treats cursor pagination with timestamps; null dates sort unpredictably—ingestion avoids nulls for new rows.
+    </div>
+
+    <div class="callout">
+      <strong>No row-level security</strong>
+      Authorization is application-layer (session checks, preference joins). Direct DB access bypasses app rules.
+    </div>
+
+    <div class="callout">
+      <strong>Digest &amp; fetch run UI</strong>
+      Tables exist; weekly digest email pipeline and fetch-run history UI are not implemented.
+    </div>
+
+    <h2 id="ops">11. Operations checklist</h2>
+    <table>
+      <thead><tr><th>Task</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>Local schema sync</td><td><code>pnpm db:push</code> or <code>pnpm db:migrate</code></td></tr>
+        <tr><td>After schema change</td><td>Edit <code>schema.ts</code> → <code>pnpm db:generate</code> → commit SQL → <code>pnpm db:migrate</code> in prod</td></tr>
+        <tr><td>Fresh registry data</td><td><code>pnpm db:seed</code></td></tr>
+        <tr><td>Inspect data</td><td><code>pnpm db:studio</code></td></tr>
+        <tr><td>Manual cron</td><td><code>curl -H "Authorization: Bearer $CRON_SECRET" .../api/cron/fetch-releases</code></td></tr>
+        <tr><td>Re-summarize old releases</td><td><code>pnpm releases:backfill -- --limit=N</code></td></tr>
+        <tr><td>Verify types</td><td><code>pnpm exec tsc --noEmit</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Related documentation</h3>
+    <ul>
+      <li><code>docs/operations/database.md</code> — short operational reference</li>
+      <li><code>docs/features/release-ingestion.md</code>, <code>release-feed.md</code>, <code>auth.md</code></li>
+      <li><code>docs/AGENT_START_HERE.md</code> — product + stack truth</li>
+    </ul>
+
+    <footer>
+      StackPulse database architecture document. Regenerate or update when <code>src/db/schema.ts</code> or migration strategy changes.
+    </footer>
+  </div>
+</body>
+</html>
