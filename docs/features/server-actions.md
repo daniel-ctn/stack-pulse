@@ -7,7 +7,7 @@ All in `src/lib/actions.ts` (`'use server'`).
 | Action | Auth | Purpose |
 |--------|------|---------|
 | `saveTechPreferences(techIds)` | yes | Replace user's followed registry stacks (max 30 total incl. custom) |
-| `addCustomTech(name, githubRepoUrl)` | yes | Add/follow custom repo (max 5 custom); triggers immediate ingestion |
+| `addCustomTech(name, githubRepoUrl)` | yes | Add/follow custom repo (max 5 custom); repo must exist and have ≥1 publishable GitHub release; triggers immediate ingestion |
 | `subscribeToDigest({ email, stackSlug, source, website })` | no | Store digest signup |
 | `markReleasesRead(releaseIds)` | yes | Mark releases read |
 | `markReleaseUnread(releaseId)` | yes | Mark release unread |

@@ -14,7 +14,7 @@ export const RELEASES_PER_TECH = 5
 
 type Tech = typeof technologies.$inferSelect
 
-function isPublishable(release: GithubRelease): boolean {
+export function isPublishable(release: GithubRelease): boolean {
   return !release.draft && !!release.published_at && !!release.tag_name
 }
 

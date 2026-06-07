@@ -15,10 +15,13 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { getAuth } from '@/lib/auth'
 import {
+  RELEASES_PER_TECH,
   createReleaseFetchRun,
   finishReleaseFetchRun,
+  isPublishable,
   processTechReleases,
 } from '@/lib/release-ingestion'
+import type { GithubRelease } from '@/lib/github'
 
 type ActionResult<T = undefined> = T extends undefined
   ? { ok: true } | { ok: false; error: string }
@@ -280,19 +283,27 @@ export async function addCustomTech(
       return { ok: false, error: `custom repo limit is ${MAX_CUSTOM_TECH_PREFERENCES}` }
     }
 
-    const res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}`, {
-      headers: {
-        Accept: 'application/vnd.github.v3+json',
-        'User-Agent': 'StackPulse',
-        ...(process.env.GITHUB_TOKEN
-          ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-          : {}),
+    const res = await fetch(
+      `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/releases?per_page=${RELEASES_PER_TECH}`,
+      {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'StackPulse',
+          ...(process.env.GITHUB_TOKEN
+            ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+            : {}),
+        },
+        signal: AbortSignal.timeout(8000),
       },
-      signal: AbortSignal.timeout(8000),
-    })
+    )
 
     if (res.status === 404) return { ok: false, error: 'github repo was not found' }
     if (!res.ok) return { ok: false, error: 'could not verify github repo' }
+
+    const releases: GithubRelease[] = await res.json()
+    if (!releases.some(isPublishable)) {
+      return { ok: false, error: 'this repo has no releases to track' }
+    }
 
     const existing = await db
       .select({
