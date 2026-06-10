@@ -59,7 +59,7 @@ export default function PrivacyPage() {
       <h2>How we use it</h2>
       <ul>
         <li>To show you a personalised feed of releases.</li>
-        <li>To send your selected repos through GitHub&apos;s public release API every 4 hours.</li>
+        <li>To send your selected repos through GitHub&apos;s public release API twice a day.</li>
         <li>To summarise release notes using OpenRouter (model details are public).</li>
         <li>
           To answer release upgrade questions using OpenRouter when you explicitly submit one.

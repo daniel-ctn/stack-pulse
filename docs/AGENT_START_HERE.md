@@ -58,7 +58,6 @@ Trust code over docs when they disagree. Surface drift; update docs only when th
 
 | Claim | Where | Code truth |
 |-------|-------|------------|
-| Cron "every 4 hours" | `README.md` (fixed 2026-05-31), `src/app/page.tsx`, `src/app/privacy/page.tsx` | `vercel.json`: `0 0,12 * * *` — **twice daily** (00:00 & 12:00 UTC) |
 | "Fetch run history" UI | `README.md` features | `release_fetch_runs` table exists; **no dashboard UI** yet |
 | Weekly digest emails | UI copy, privacy page | Signups stored only; **no cron/email pipeline** |
 | `LICENSE` file | `README.md` | File **not present** in repo |

@@ -31,7 +31,7 @@ const steps = [
     n: '02',
     cmd: 'pulse --watch',
     title: 'we watch the releases',
-    body: 'Every new GitHub release for your stack is fetched every 4 hours, parsed, and run through an AI summariser tuned for changelogs and migration notes.',
+    body: 'Every new GitHub release for your stack is fetched twice a day, parsed, and run through an AI summariser tuned for changelogs and migration notes.',
   },
   {
     n: '03',
