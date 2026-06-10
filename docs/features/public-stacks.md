@@ -6,6 +6,7 @@
 
 - `/stacks` — index of seeded/ingested stacks with stats (`src/app/stacks/page.tsx`)
 - `/stacks/[slug]` — up to 20 releases per stack (`PUBLIC_STACK_RELEASE_LIMIT` in `src/lib/public-stacks.ts`)
+- `/stacks/[slug]/rss.xml` — RSS 2.0 feed of the same releases (route handler, `Cache-Control: s-maxage=3600`); advertised via `alternates.types` metadata and an `rss` button on the stack page
 
 ## Data
 
@@ -23,4 +24,4 @@
 
 ## Registry seed
 
-20 default stacks in `src/db/seed.ts` (Next.js, React, Tailwind, Drizzle, etc.). Custom user repos use `category: 'custom'` and appear in DB but are not part of the public index unless ingested and surfaced by queries.
+90 default stacks in `src/db/seed.ts` across 15 categories (frameworks, libraries, ui, state, data, orm, testing, mobile, desktop, ai, auth, …). The seed syncs existing rows by slug; `scripts/check-seed-releases.mjs` audits that every repo publishes GitHub releases. Custom user repos use `category: 'custom'` and appear in DB but are not part of the public index unless ingested and surfaced by queries.

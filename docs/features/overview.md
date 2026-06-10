@@ -15,6 +15,7 @@ App Router route groups — see [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) for UI t
 | `/dashboard` | `src/app/(dashboard)/dashboard/page.tsx` | optional | Release feed (redirects to onboarding if signed in with no stacks) |
 | `/stacks` | `src/app/stacks/page.tsx` | no | Public stack index |
 | `/stacks/[slug]` | `src/app/stacks/[slug]/page.tsx` | no | Public stack release page |
+| `/stacks/[slug]/rss.xml` | `src/app/stacks/[slug]/rss.xml/route.ts` | no | RSS 2.0 feed per stack (CDN-cached 1h) |
 | `/privacy`, `/terms` | `src/app/privacy/page.tsx`, `terms/page.tsx` | no | Legal |
 | `/api/auth/[...all]` | `src/app/api/auth/[...all]/route.ts` | — | Better Auth handler |
 | `/api/releases` | `src/app/api/releases/route.ts` | optional | Paginated feed JSON |
