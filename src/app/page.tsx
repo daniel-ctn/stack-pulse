@@ -19,6 +19,7 @@ import {
 import { Logo } from '@/components/logo'
 import { DigestSignupForm } from '@/components/landing/digest-signup-form'
 import { StackPulseHero } from '@/components/stack-pulse-hero'
+import { getLandingStats } from '@/lib/landing-stats'
 
 const steps = [
   {
@@ -151,6 +152,8 @@ export default async function LandingPage() {
 
   if (session) redirect('/dashboard')
 
+  const stats = await getLandingStats()
+
   return (
     <div className="relative flex-1">
       <script
@@ -193,6 +196,27 @@ export default async function LandingPage() {
 
       <main className="relative z-10">
         <StackPulseHero />
+
+        {/* Live stats */}
+        {stats && stats.releases > 0 && (
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line/60 py-3 font-mono text-[12px]">
+              <span className="text-fade">$ stackpulse --stats</span>
+              <span className="text-dust">
+                <span className="font-semibold text-lime">{stats.releases.toLocaleString()}</span>{' '}
+                releases distilled
+              </span>
+              <span className="text-dust">
+                <span className="font-semibold text-rose">{stats.breaking.toLocaleString()}</span>{' '}
+                with breaking changes
+              </span>
+              <span className="text-dust">
+                <span className="font-semibold text-cyan">{stats.stacks.toLocaleString()}</span>{' '}
+                stacks in registry
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Release signals */}
         <div className="mx-auto max-w-7xl px-6 mt-16 sm:mt-24">
