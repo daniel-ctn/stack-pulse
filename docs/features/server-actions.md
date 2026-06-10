@@ -9,6 +9,8 @@ All in `src/lib/actions.ts` (`'use server'`).
 | `saveTechPreferences(techIds)` | yes | Replace user's followed registry stacks (max 30 total incl. custom) |
 | `addCustomTech(name, githubRepoUrl)` | yes | Add/follow custom repo (max 5 custom); repo must exist and have ≥1 publishable GitHub release; triggers immediate ingestion |
 | `subscribeToDigest({ email, stackSlug, source, website })` | no | Store digest signup |
+| `unsubscribeFromDigest(formData)` | token | Delete digest subscriber by unsubscribe token → redirect with status |
+| `scanPackageJson(packageJsonText)` | yes | Resolve pasted package.json deps via npm registry → registry matches + custom repo candidates (`src/lib/stack-import.ts`; 6 scans/h per user, 120 deps max) |
 | `markReleasesRead(releaseIds)` | yes | Mark releases read |
 | `markReleaseUnread(releaseId)` | yes | Mark release unread |
 | `signOutAction()` | yes | Sign out → redirect `/` |

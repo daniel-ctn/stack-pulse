@@ -25,7 +25,7 @@ const steps = [
     n: '01',
     cmd: 'stack add <tool>',
     title: 'pick your stack',
-    body: 'Choose from 90+ registry stacks — React, Next.js, Tailwind, Drizzle, and more — or paste any GitHub repo URL to follow it.',
+    body: 'Paste your package.json and follow your whole stack in one click, choose from 90+ registry stacks, or add any GitHub repo URL.',
   },
   {
     n: '02',

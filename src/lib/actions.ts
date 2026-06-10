@@ -22,6 +22,11 @@ import {
   processTechReleases,
 } from '@/lib/release-ingestion'
 import type { GithubRelease } from '@/lib/github'
+import {
+  extractDependencyNames,
+  resolveDependencies,
+  type StackImportResult,
+} from '@/lib/stack-import'
 
 type ActionResult<T = undefined> = T extends undefined
   ? { ok: true } | { ok: false; error: string }
@@ -394,6 +399,56 @@ export async function addCustomTech(
   } catch (err) {
     console.error('addCustomTech failed:', err)
     return { ok: false, error: 'could not add repo — name may already be taken' }
+  }
+}
+
+const MAX_PACKAGE_JSON_BYTES = 300_000
+const MAX_SCANS_PER_WINDOW = 6
+const SCAN_WINDOW_MS = 60 * 60 * 1000
+const scanAttempts = new Map<string, { count: number; resetAt: number }>()
+
+function isScanRateLimited(userId: string): boolean {
+  const now = Date.now()
+  const current = scanAttempts.get(userId)
+
+  if (!current || current.resetAt <= now) {
+    scanAttempts.set(userId, { count: 1, resetAt: now + SCAN_WINDOW_MS })
+    return false
+  }
+
+  if (current.count >= MAX_SCANS_PER_WINDOW) return true
+
+  current.count += 1
+  return false
+}
+
+export async function scanPackageJson(
+  packageJsonText: string,
+): Promise<ActionResult<StackImportResult>> {
+  const userId = await requireUserId()
+  if (!userId) return { ok: false, error: 'not signed in' }
+
+  if (packageJsonText.length > MAX_PACKAGE_JSON_BYTES) {
+    return { ok: false, error: 'package.json is too large' }
+  }
+
+  if (isScanRateLimited(userId)) {
+    return { ok: false, error: 'too many scans; try again later' }
+  }
+
+  const names = extractDependencyNames(packageJsonText)
+  if (names === null) {
+    return { ok: false, error: 'could not parse package.json — paste the whole file' }
+  }
+  if (names.length === 0) {
+    return { ok: false, error: 'no dependencies found in package.json' }
+  }
+
+  try {
+    return { ok: true, data: await resolveDependencies(names) }
+  } catch (err) {
+    console.error('scanPackageJson failed:', err)
+    return { ok: false, error: 'could not scan dependencies' }
   }
 }
 

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Tick01Icon, ArrowRight01Icon, PlusSignIcon, Search01Icon } from 'hugeicons-react'
 import { saveTechPreferences, addCustomTech } from '@/lib/actions'
+import { PackageJsonImport } from '@/components/package-json-import'
 import { PulseLoader } from '@/components/ui/pulse-loader'
 
 type Tech = {
@@ -68,6 +69,20 @@ export function TechSelector({
     setSelectedIds((prev) => new Set(prev).add(result.data.id))
     setCustomName('')
     setCustomUrl('')
+    router.refresh()
+  }
+
+  const handleImportSelect = (ids: string[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      for (const id of ids) next.add(id)
+      return next
+    })
+  }
+
+  const handleImportCustomAdded = (tech: Tech) => {
+    setTechs((prev) => (prev.some((item) => item.id === tech.id) ? prev : [...prev, tech]))
+    setSelectedIds((prev) => new Set(prev).add(tech.id))
     router.refresh()
   }
 
@@ -148,6 +163,13 @@ export function TechSelector({
           </div>
         </div>
       </div>
+
+      {/* Import package.json */}
+      <PackageJsonImport
+        selectedIds={selectedIds}
+        onSelectTechs={handleImportSelect}
+        onCustomAdded={handleImportCustomAdded}
+      />
 
       {/* Search bar */}
       <div>

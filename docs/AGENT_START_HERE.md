@@ -25,7 +25,7 @@ Trust code over docs when they disagree. Surface drift; update docs only when th
 | Area | Truth (verified in code) |
 |------|--------------------------|
 | Auth | GitHub OAuth only via Better Auth. `/sign-up` redirects to `/sign-in`. |
-| Onboarding | `/onboarding` — pick up to 30 registry stacks; up to 5 custom GitHub repos. |
+| Onboarding | `/onboarding` — pick up to 30 registry stacks; up to 5 custom GitHub repos; **package.json import** resolves deps via npm registry into follow suggestions. |
 | Feed | `/dashboard` — virtualised release feed with importance, read/unread, signal, tech, search filters. |
 | AI chat | Authenticated POST `/api/release-advice` — upgrade Q&A on a release. |
 | Public SEO | `/stacks`, `/stacks/[slug]` — public release pages (20 releases/stack). |

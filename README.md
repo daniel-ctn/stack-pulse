@@ -11,6 +11,7 @@ StackPulse is a non-profit, open-source service for developers. It watches a lis
 
 - **GitHub-only auth** via Better Auth. No email, no password, no spam.
 - **A registry of 90+ stacks** (React, Next.js, Vue, Tailwind, Drizzle, Astro, Bun, Svelte, Playwright, Electron, the AI SDKs, …) plus an "add any GitHub repo" escape hatch.
+- **package.json import** — paste your file, StackPulse resolves every dependency to its GitHub repo and follows your whole stack in one click.
 - **AI-distilled release notes** through OpenRouter (default: `deepseek/deepseek-chat`, configurable).
 - **A git-log-style feed** with diff-style breaking changes / new features, importance badges, and source links.
 - **Read/unread workflow** with stack, importance, status, and text filters.
