@@ -182,6 +182,11 @@ export function ReleaseFeed({
 
   const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['release-feed'] })
 
+  // Selection resets implicitly when filters change because the stored key no longer matches.
+  const filterKey = [importance, effectiveRead, signal, techFilter, searchFilter].join('|')
+  const [selection, setSelection] = useState({ key: '', index: -1 })
+  const selectedIndex = selection.key === filterKey ? selection.index : -1
+
   const handleMarkVisibleRead = () => {
     const unreadIds = releases.filter((release) => !release.isRead).map((release) => release.id)
     if (unreadIds.length === 0) return
@@ -200,6 +205,47 @@ export function ReleaseFeed({
       if (result.ok) refreshFeed()
     })
   }
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (releases.length === 0) return
+
+      if (event.key === 'j' || event.key === 'k') {
+        const next =
+          event.key === 'j'
+            ? Math.min(selectedIndex + 1, releases.length - 1)
+            : Math.max(selectedIndex - 1, 0)
+        setSelection({ key: filterKey, index: next })
+        requestAnimationFrame(() => {
+          document
+            .querySelector(`[data-index="${next}"]`)
+            ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        })
+      } else if (event.key === 'r' && canManageReadState) {
+        const release = releases[selectedIndex]
+        if (release) handleToggleRead(release)
+      } else if (event.key === 'o') {
+        const release = releases[selectedIndex]
+        if (release?.rawReleaseUrl) {
+          window.open(release.rawReleaseUrl, '_blank', 'noopener,noreferrer')
+        }
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  })
 
   return (
     <>
@@ -293,6 +339,10 @@ export function ReleaseFeed({
             className="h-9 rounded-md border border-line bg-void px-3 font-mono text-[12px] text-dust placeholder:text-fade"
           />
         </div>
+
+        <div className="mt-2.5 hidden font-mono text-[10px] text-fade lg:block">
+          {'// '}j/k navigate · o open source{canManageReadState ? ' · r toggle read' : ''}
+        </div>
       </div>
 
       {query.isLoading ? (
@@ -323,13 +373,14 @@ export function ReleaseFeed({
                   key={virtualItem.key}
                   data-index={virtualItem.index}
                   ref={rowVirtualizer.measureElement}
-                  className="absolute left-0 top-0 w-full pb-6"
+                  className="absolute left-0 top-0 w-full scroll-mt-20 pb-6"
                   style={{ transform: `translateY(${virtualItem.start}px)` }}
                 >
                   {release ? (
                     <ReleaseCard
                       release={release}
                       index={virtualItem.index}
+                      isSelected={virtualItem.index === selectedIndex}
                       onToggleRead={handleToggleRead}
                       isMarking={isMarking}
                       canManageReadState={canManageReadState}
@@ -383,12 +434,14 @@ function hasReleaseSignal(release: ReleaseFeedItem, signal: Exclude<SignalFilter
 function ReleaseCard({
   release,
   index,
+  isSelected,
   onToggleRead,
   isMarking,
   canManageReadState,
 }: {
   release: ReleaseFeedItem
   index: number
+  isSelected: boolean
   onToggleRead: (release: ReleaseFeedItem) => void
   isMarking: boolean
   canManageReadState: boolean
@@ -420,7 +473,7 @@ function ReleaseCard({
         aria-hidden
       />
 
-      <div className="frame overflow-hidden">
+      <div className={cn('frame overflow-hidden', isSelected && 'ring-1 ring-lime/50')}>
         <div className="px-4 py-3 border-b border-line flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px]">
           <span className={`inline-block w-1.5 h-1.5 rounded-full ${tone.dot}`} />
           <span className="text-fade">{sha(release.id)}</span>

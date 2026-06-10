@@ -38,3 +38,7 @@ Authenticated users can ask upgrade questions; POST `/api/release-advice` with r
 ## Virtualisation
 
 `@tanstack/react-virtual` window virtualizer for long feeds; `@tanstack/react-query` for pagination.
+
+## Keyboard navigation
+
+`j`/`k` move selection (lime ring, scrolls into view), `o` opens the source release in a new tab, `r` toggles read state (signed-in only). Ignored while typing in inputs/selects. Hint line shows in the filter bar on `lg+` screens.
