@@ -129,6 +129,8 @@ export const digestSubscribers = pgTable(
     email: text('email').notNull().unique(),
     stackSlug: text('stack_slug'),
     source: text('source').notNull().default('public'),
+    unsubscribeToken: uuid('unsubscribe_token').notNull().unique().defaultRandom(),
+    lastSentAt: timestamp('last_sent_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

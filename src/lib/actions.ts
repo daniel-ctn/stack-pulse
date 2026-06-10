@@ -218,6 +218,23 @@ export async function subscribeToDigest({
   }
 }
 
+export async function unsubscribeFromDigest(formData: FormData): Promise<void> {
+  const token = String(formData.get('token') ?? '')
+
+  if (UUID.test(token)) {
+    try {
+      await getDb()
+        .delete(digestSubscribers)
+        .where(eq(digestSubscribers.unsubscribeToken, token))
+    } catch (err) {
+      console.error('unsubscribeFromDigest failed:', err)
+      redirect('/digest/unsubscribe?error=1')
+    }
+  }
+
+  redirect('/digest/unsubscribe?done=1')
+}
+
 // GitHub username/repo: alphanumeric + dash/underscore/dot, no leading dash/dot, length <= 100.
 const GH_NAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$/
 

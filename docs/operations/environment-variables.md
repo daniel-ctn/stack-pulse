@@ -24,6 +24,8 @@ Canonical template: [`.env.example`](../../.env.example)
 | `OPENROUTER_MODEL` | `deepseek/deepseek-chat` | OpenRouter model id |
 | `GITHUB_TOKEN` | — | GitHub API PAT (rate limit 60→5000/h) |
 | `BETTER_AUTH_API_KEY` | — | Better Auth Dash at dash.better-auth.com |
+| `RESEND_API_KEY` | — | Weekly digest emails (digest cron no-ops without it) |
+| `DIGEST_FROM_EMAIL` | — | Verified Resend sender, e.g. `StackPulse <digest@domain.com>` |
 
 ## Local dev minimum
 

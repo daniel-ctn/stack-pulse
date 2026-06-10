@@ -12,11 +12,14 @@
 
 ```json
 {
-  "crons": [{ "path": "/api/cron/fetch-releases", "schedule": "0 0,12 * * *" }]
+  "crons": [
+    { "path": "/api/cron/fetch-releases", "schedule": "0 0,12 * * *" },
+    { "path": "/api/cron/send-digest", "schedule": "0 14 * * 1" }
+  ]
 }
 ```
 
-Runs at **00:00 and 12:00 UTC** daily. Authenticated with `CRON_SECRET` bearer header.
+Release fetch runs at **00:00 and 12:00 UTC** daily; digest emails send **Mondays 14:00 UTC** (after the Monday fetch). Both authenticated with `CRON_SECRET` bearer header. Digest sending also needs `RESEND_API_KEY` + `DIGEST_FROM_EMAIL` (no-ops with a warning otherwise).
 
 ## Deploy checklist
 

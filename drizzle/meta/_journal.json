@@ -50,6 +50,13 @@
       "when": 1779440300592,
       "tag": "0006_giant_cerise",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781132878228,
+      "tag": "0007_colossal_shadow_king",
+      "breakpoints": true
     }
   ]
 }

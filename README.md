@@ -14,6 +14,7 @@ StackPulse is a non-profit, open-source service for developers. It watches a lis
 - **AI-distilled release notes** through OpenRouter (default: `deepseek/deepseek-chat`, configurable).
 - **A git-log-style feed** with diff-style breaking changes / new features, importance badges, and source links.
 - **Read/unread workflow** with stack, importance, status, and text filters.
+- **Weekly email digest** via Resend — stack-scoped or cross-stack, with one-click unsubscribe.
 - **Fetch run history** for cron/custom repo ingestion health.
 - **Self-hostable** on Vercel + Neon free tier.
 
@@ -83,7 +84,7 @@ Detailed docs for contributors and AI agents live in [`docs/`](docs/). Start at 
 
 ## Deploying
 
-The project ships with a [`vercel.json`](vercel.json) that schedules the release fetcher **twice daily** (00:00 and 12:00 UTC). To deploy:
+The project ships with a [`vercel.json`](vercel.json) that schedules the release fetcher **twice daily** (00:00 and 12:00 UTC) and the digest sender **weekly** (Mondays 14:00 UTC). To deploy:
 
 1. Push to GitHub.
 2. Import the repo into Vercel.
@@ -105,6 +106,7 @@ See [`.env.example`](.env.example) and [`docs/operations/environment-variables.m
 Optional but recommended:
 
 - `GITHUB_TOKEN` — raises the GitHub API rate limit from 60/h to 5000/h
+- `RESEND_API_KEY` / `DIGEST_FROM_EMAIL` — enables the weekly digest emails (the digest cron no-ops without them)
 
 ## Project structure
 

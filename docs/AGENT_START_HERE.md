@@ -29,7 +29,7 @@ Trust code over docs when they disagree. Surface drift; update docs only when th
 | Feed | `/dashboard` — virtualised release feed with importance, read/unread, signal, tech, search filters. |
 | AI chat | Authenticated POST `/api/release-advice` — upgrade Q&A on a release. |
 | Public SEO | `/stacks`, `/stacks/[slug]` — public release pages (20 releases/stack). |
-| Digest signup | Landing + public stack pages collect emails into `digest_subscribers`. **No email sender implemented.** |
+| Digest | Landing + public stack pages collect emails into `digest_subscribers`. Weekly digest **sends via Resend** (`/api/cron/send-digest`, Mondays 14:00 UTC) when `RESEND_API_KEY` + `DIGEST_FROM_EMAIL` are set; one-click unsubscribe at `/digest/unsubscribe`. |
 | Cron | Fetches releases for **all registry stacks** + custom repos followed by ≥1 user. Custom repos also fetch immediately on add. |
 | Billing | **None.** Lemon Squeezy columns removed in migration `0002`; do not reintroduce without explicit task. |
 | Analytics | `@vercel/analytics` in root layout only. No PostHog/Sentry in app code. |
@@ -59,7 +59,6 @@ Trust code over docs when they disagree. Surface drift; update docs only when th
 | Claim | Where | Code truth |
 |-------|-------|------------|
 | "Fetch run history" UI | `README.md` features | `release_fetch_runs` table exists; **no dashboard UI** yet |
-| Weekly digest emails | UI copy, privacy page | Signups stored only; **no cron/email pipeline** |
 | GitHub OAuth "required" | README deploy section | Optional in dev (`auth.ts` skips provider if env missing); **required in production** |
 
 Old Drizzle snapshots (`drizzle/meta/0000_snapshot.json`, `0001`) still mention `lemonsqueezy_*` — historical migration artifacts only.
@@ -82,7 +81,7 @@ Old Drizzle snapshots (`drizzle/meta/0000_snapshot.json`, `0001`) still mention 
 | Env vars | `.env.example` | [operations/environment-variables.md](./operations/environment-variables.md) | Canonical list |
 | Deploy & cron | `vercel.json`, README | [operations/deployment.md](./operations/deployment.md) | Vercel Cron auth via `CRON_SECRET` |
 | Local dev | `package.json` scripts | [operations/local-development.md](./operations/local-development.md) | No test suite in repo |
-| Digest capture | `digestSubscribers` table, `subscribeToDigest` | [features/digest-signup.md](./features/digest-signup.md) | Capture only |
+| Digest | `src/lib/digest.ts`, `digestSubscribers` table, `subscribeToDigest` | [features/digest-signup.md](./features/digest-signup.md) | Capture + weekly Resend send + unsubscribe |
 | Design system + architecture | `globals.css`, `src/components/**` | [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) | Tokens, layout, copy voice, badges |
 
 ---
@@ -163,6 +162,8 @@ See [operations/environment-variables.md](./operations/environment-variables.md)
 | `OPENROUTER_MODEL` | no | Default `deepseek/deepseek-chat` |
 | `GITHUB_TOKEN` | no | Raises GitHub API rate limit |
 | `BETTER_AUTH_API_KEY` | no | Better Auth Dash plugin |
+| `RESEND_API_KEY` | no | Weekly digest emails |
+| `DIGEST_FROM_EMAIL` | no | Verified Resend sender for digests |
 
 ---
 

@@ -20,6 +20,9 @@ App Router route groups — see [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) for UI t
 | `/api/releases` | `src/app/api/releases/route.ts` | optional | Paginated feed JSON |
 | `/api/release-advice` | `src/app/api/release-advice/route.ts` | yes | AI upgrade advice |
 | `/api/cron/fetch-releases` | `src/app/api/cron/fetch-releases/route.ts` | `CRON_SECRET` | Scheduled ingestion |
+| `/api/cron/send-digest` | `src/app/api/cron/send-digest/route.ts` | `CRON_SECRET` | Weekly digest emails |
+| `/api/digest/unsubscribe` | `src/app/api/digest/unsubscribe/route.ts` | token | One-click unsubscribe (POST) |
+| `/digest/unsubscribe` | `src/app/digest/unsubscribe/page.tsx` | token | Unsubscribe confirmation page |
 
 ## Key directories
 
