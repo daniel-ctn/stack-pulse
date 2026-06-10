@@ -1,4 +1,6 @@
 allowBuilds:
+  # sentry-cli binary is only needed for source map upload; we don't upload.
+  '@sentry/cli': false
   esbuild: false
   msw: false
   sharp: false

@@ -26,6 +26,9 @@ Canonical template: [`.env.example`](../../.env.example)
 | `BETTER_AUTH_API_KEY` | — | Better Auth Dash at dash.better-auth.com |
 | `RESEND_API_KEY` | — | Weekly digest emails (digest cron no-ops without it) |
 | `DIGEST_FROM_EMAIL` | — | Verified Resend sender, e.g. `StackPulse <digest@domain.com>` |
+| `SENTRY_DSN` | — | Server/edge error monitoring (SDK fully disabled without it) |
+| `NEXT_PUBLIC_SENTRY_DSN` | — | Browser error monitoring |
+| `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN` | — | Only for source map upload in CI |
 
 ## Local dev minimum
 

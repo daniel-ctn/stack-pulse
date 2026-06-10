@@ -32,7 +32,8 @@ Trust code over docs when they disagree. Surface drift; update docs only when th
 | Digest | Landing + public stack pages collect emails into `digest_subscribers`. Weekly digest **sends via Resend** (`/api/cron/send-digest`, Mondays 14:00 UTC) when `RESEND_API_KEY` + `DIGEST_FROM_EMAIL` are set; one-click unsubscribe at `/digest/unsubscribe`. |
 | Cron | Fetches releases for **all registry stacks** + custom repos followed by ≥1 user. Custom repos also fetch immediately on add. |
 | Billing | **None.** Lemon Squeezy columns removed in migration `0002`; do not reintroduce without explicit task. |
-| Analytics | `@vercel/analytics` in root layout only. No PostHog/Sentry in app code. |
+| Analytics | `@vercel/analytics` in root layout only. |
+| Monitoring | `@sentry/nextjs` errors-only, gated on `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` (fully inert without them). Configs: `src/instrumentation.ts`, `src/instrumentation-client.ts`, root `sentry.*.config.ts`. |
 
 ---
 
@@ -50,7 +51,7 @@ Trust code over docs when they disagree. Surface drift; update docs only when th
 | Hosting | Vercel + Vercel Cron (`vercel.json`) |
 | Package manager | pnpm 11 |
 
-**Not used:** Prisma (ORM is Drizzle), Clerk/Supabase auth, Stripe/Lemon Squeezy billing, PostHog, Sentry SDK.
+**Not used:** Prisma (ORM is Drizzle), Clerk/Supabase auth, Stripe/Lemon Squeezy billing, PostHog.
 
 ---
 
