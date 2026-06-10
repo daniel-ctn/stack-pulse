@@ -4,11 +4,13 @@
 
 ## Flow
 
-1. Resolve list of `technologies` rows followed by ≥1 user (`user_tech_preferences`)
+1. Resolve techs to fetch: **all registry stacks** (`category != 'custom'`) plus custom repos followed by ≥1 user (`user_tech_preferences`)
 2. For each tech, fetch up to 5 latest GitHub releases (`src/lib/github.ts`)
 3. Skip drafts and duplicates (`techId` + `version` unique)
 4. Summarise via OpenRouter (`summarizeRelease` in `src/lib/ai.ts`)
 5. Insert into `release_updates`
+
+Registry stacks fetch regardless of followers so public `/stacks/[slug]` pages stay fresh and a first follow never lands on an empty feed.
 
 ## Triggers
 
@@ -19,7 +21,7 @@
 
 Cron auth: `Authorization: Bearer {CRON_SECRET}` (timing-safe compare).
 
-Processing runs in chunks of 6 techs in parallel (`CHUNK_SIZE` in cron route). `maxDuration = 60`.
+Processing runs in chunks of 6 techs in parallel (`CHUNK_SIZE` in cron route). `maxDuration = 300` with a 270s internal time budget — when the budget is hit, remaining chunks are skipped and caught up on the next run (already-stored releases skip the AI step, so reruns get progressively faster).
 
 ## Schedule (code truth)
 

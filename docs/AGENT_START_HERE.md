@@ -30,7 +30,7 @@ Trust code over docs when they disagree. Surface drift; update docs only when th
 | AI chat | Authenticated POST `/api/release-advice` — upgrade Q&A on a release. |
 | Public SEO | `/stacks`, `/stacks/[slug]` — public release pages (20 releases/stack). |
 | Digest signup | Landing + public stack pages collect emails into `digest_subscribers`. **No email sender implemented.** |
-| Cron | Fetches releases for stacks **followed by at least one user**. Custom repos fetch immediately on add. |
+| Cron | Fetches releases for **all registry stacks** + custom repos followed by ≥1 user. Custom repos also fetch immediately on add. |
 | Billing | **None.** Lemon Squeezy columns removed in migration `0002`; do not reintroduce without explicit task. |
 | Analytics | `@vercel/analytics` in root layout only. No PostHog/Sentry in app code. |
 
