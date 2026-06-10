@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft01Icon, Link01Icon, RssIcon } from 'hugeicons-react'
+import { ArrowLeft01Icon, ArrowUp01Icon, Link01Icon, RssIcon } from 'hugeicons-react'
 
 import { DigestSignupForm } from '@/components/landing/digest-signup-form'
 import { Logo } from '@/components/logo'
@@ -177,6 +177,13 @@ export default async function StackPage({ params, searchParams }: Props) {
               >
                 <span className="text-void/60">$</span>
                 <span>track this stack</span>
+              </Link>
+              <Link
+                href={`/stacks/${data.tech.slug}/upgrade`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-ruling bg-shade px-3 py-2 text-dust transition-colors hover:border-lime hover:text-lime"
+              >
+                <ArrowUp01Icon className="h-3.5 w-3.5" />
+                plan upgrade
               </Link>
               <a
                 href={`/stacks/${data.tech.slug}/rss.xml`}

@@ -7,6 +7,7 @@
 - `/stacks` — index of seeded/ingested stacks with stats (`src/app/stacks/page.tsx`)
 - `/stacks/[slug]` — up to 20 releases per stack (`PUBLIC_STACK_RELEASE_LIMIT` in `src/lib/public-stacks.ts`)
 - `/stacks/[slug]/rss.xml` — RSS 2.0 feed of the same releases (route handler, `Cache-Control: s-maxage=3600`); advertised via `alternates.types` metadata and an `rss` button on the stack page
+- `/stacks/[slug]/upgrade` — public upgrade planner; `?from=<version>` filters stored releases above that version (`src/lib/upgrade-plan.ts`, loose version compare from `src/lib/version.ts`) and aggregates breaking changes, security notes, deprecations, and a migration checklist in upgrade order. Canonical always points at the param-less page; both stack page button and sitemap link it
 
 ## Data
 

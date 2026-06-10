@@ -40,5 +40,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.8,
     })),
+    ...stacks.map((stack) => ({
+      url: `${base}/stacks/${stack.slug}/upgrade`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    })),
   ]
 }
