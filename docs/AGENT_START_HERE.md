@@ -60,7 +60,6 @@ Trust code over docs when they disagree. Surface drift; update docs only when th
 |-------|-------|------------|
 | "Fetch run history" UI | `README.md` features | `release_fetch_runs` table exists; **no dashboard UI** yet |
 | Weekly digest emails | UI copy, privacy page | Signups stored only; **no cron/email pipeline** |
-| `LICENSE` file | `README.md` | File **not present** in repo |
 | GitHub OAuth "required" | README deploy section | Optional in dev (`auth.ts` skips provider if env missing); **required in production** |
 
 Old Drizzle snapshots (`drizzle/meta/0000_snapshot.json`, `0001`) still mention `lemonsqueezy_*` — historical migration artifacts only.

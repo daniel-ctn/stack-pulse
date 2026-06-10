@@ -135,4 +135,4 @@ Keep changes small and focused. Run `pnpm exec tsc --noEmit && pnpm lint` before
 
 ## Licence
 
-MIT — see [`LICENSE`](LICENSE) if present, otherwise treat as MIT until one is added.
+MIT — see [`LICENSE`](LICENSE).
