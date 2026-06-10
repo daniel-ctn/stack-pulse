@@ -163,7 +163,7 @@ digest_subscribers  (standalone; optional stack_slug references technologies.slu
         <tr><td>created_at</td><td>timestamp</td><td></td></tr>
       </tbody>
     </table>
-    <p>Seed script inserts 20 registry stacks (idempotent by slug). Custom repos share the same table with generated slugs.</p>
+    <p>Seed script inserts the 90-stack registry (idempotent by slug; existing rows are synced). Custom repos share the same table with generated slugs.</p>
 
     <h3>4.4 <code>user_tech_preferences</code></h3>
     <table>
@@ -327,7 +327,7 @@ digest_subscribers  (standalone; optional stack_slug references technologies.slu
 pnpm db:push          # dev: push schema without migration files
 pnpm db:generate      # after editing schema.ts — creates SQL in drizzle/
 pnpm db:migrate       # apply migrations (production path)
-pnpm db:seed          # 20 registry technologies (idempotent)
+pnpm db:seed          # 90-stack registry (idempotent)
 pnpm db:studio        # Drizzle Studio GUI
 
 pnpm releases:backfill -- --limit=10   # re-run AI on existing rows</pre>

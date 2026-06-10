@@ -35,7 +35,7 @@ App: http://localhost:3000
 | `db:generate` | New Drizzle migration from schema |
 | `db:migrate` | Apply migrations |
 | `db:push` | Push schema (dev) |
-| `db:seed` | Seed 20 registry stacks |
+| `db:seed` | Seed + sync the 90-stack registry |
 | `db:studio` | Drizzle Studio |
 | `releases:backfill` | Re-summarise releases |
 | `icons` | Generate favicons |

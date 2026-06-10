@@ -126,7 +126,7 @@ Database (requires `.env` with `DATABASE_URL`):
 ```bash
 pnpm db:push          # dev schema sync
 pnpm db:migrate       # apply migrations
-pnpm db:seed          # seed 20 registry stacks
+pnpm db:seed          # seed + sync the 90-stack registry
 pnpm db:studio        # Drizzle Studio
 ```
 

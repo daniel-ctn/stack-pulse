@@ -39,7 +39,7 @@ pnpm db:push
 pnpm db:seed
 ```
 
-Inserts 20 registry stacks from `src/db/seed.ts` (idempotent — skips existing slugs).
+Seeds the 90-stack registry from `src/db/seed.ts` (idempotent — inserts missing slugs, updates name/description/category/repo URL on existing ones).
 
 ## Historical note
 

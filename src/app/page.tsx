@@ -25,7 +25,7 @@ const steps = [
     n: '01',
     cmd: 'stack add <tool>',
     title: 'pick your stack',
-    body: 'Choose from React, Next.js, Tailwind, Drizzle, and 20+ other frameworks, or paste any GitHub repo URL to follow it.',
+    body: 'Choose from 90+ registry stacks — React, Next.js, Tailwind, Drizzle, and more — or paste any GitHub repo URL to follow it.',
   },
   {
     n: '02',
@@ -88,7 +88,7 @@ const faqItems = [
   {
     question: 'Which repositories can I follow?',
     answer:
-      'You can start with common stacks like React, Next.js, Tailwind, Drizzle, Astro, Bun, Svelte, and Vite, or add any public GitHub repository.',
+      'The registry covers 90+ stacks — React, Next.js, Tailwind, Drizzle, Astro, Bun, Svelte, Vue, and more — and you can add any public GitHub repository on top.',
   },
 ]
 
@@ -304,7 +304,7 @@ export default async function LandingPage() {
                 <span style={{ background: '#34d399' }} />
               </span>
               <span className="text-dust">~/registry.json</span>
-              <span className="ml-auto text-mute">+ {trackedStacks.length - 6} more</span>
+              <span className="ml-auto text-mute">90+ stacks in registry</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-line">
               {trackedStacks.map(({ name, slug, icon: Icon }) => (
