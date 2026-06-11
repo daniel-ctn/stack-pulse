@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 
 import { getDb } from '@/db'
 import {
@@ -92,6 +92,34 @@ export async function processTechReleases(tech: Tech): Promise<ReleaseFetchRunDe
   }
 
   return { tech: tech.name, inserted, errors }
+}
+
+export type FetchRunRow = {
+  id: string
+  trigger: string
+  status: string
+  technologiesScanned: number
+  releasesInserted: number
+  errors: number
+  startedAt: Date
+  finishedAt: Date | null
+}
+
+export async function getRecentFetchRuns(limit = 20): Promise<FetchRunRow[]> {
+  return getDb()
+    .select({
+      id: releaseFetchRuns.id,
+      trigger: releaseFetchRuns.trigger,
+      status: releaseFetchRuns.status,
+      technologiesScanned: releaseFetchRuns.technologiesScanned,
+      releasesInserted: releaseFetchRuns.releasesInserted,
+      errors: releaseFetchRuns.errors,
+      startedAt: releaseFetchRuns.startedAt,
+      finishedAt: releaseFetchRuns.finishedAt,
+    })
+    .from(releaseFetchRuns)
+    .orderBy(desc(releaseFetchRuns.startedAt))
+    .limit(limit)
 }
 
 export async function createReleaseFetchRun(trigger: string) {

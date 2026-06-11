@@ -425,6 +425,9 @@ export default async function LandingPage() {
               </a>
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
+              <Link href="/status" className="hover:text-ink transition-colors">
+                status
+              </Link>
               <Link href="/privacy" className="hover:text-ink transition-colors">
                 privacy
               </Link>

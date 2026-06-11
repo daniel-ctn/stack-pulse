@@ -16,7 +16,7 @@ StackPulse is a non-profit, open-source service for developers. It watches a lis
 - **A git-log-style feed** with diff-style breaking changes / new features, importance badges, and source links.
 - **Read/unread workflow** with stack, importance, status, and text filters.
 - **Weekly email digest** via Resend — stack-scoped or cross-stack, with one-click unsubscribe.
-- **Fetch run history** for cron/custom repo ingestion health.
+- **Public status page** (`/status`) with fetch run history for ingestion health.
 - **Self-hostable** on Vercel + Neon free tier.
 
 ## Tech stack

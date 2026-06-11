@@ -17,6 +17,7 @@ App Router route groups — see [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) for UI t
 | `/stacks/[slug]` | `src/app/stacks/[slug]/page.tsx` | no | Public stack release page |
 | `/stacks/[slug]/rss.xml` | `src/app/stacks/[slug]/rss.xml/route.ts` | no | RSS 2.0 feed per stack (CDN-cached 1h) |
 | `/stacks/[slug]/upgrade` | `src/app/stacks/[slug]/upgrade/page.tsx` | no | Upgrade planner: `?from=<version>` aggregates stored breaking changes/deprecations/migration steps up to latest |
+| `/status` | `src/app/status/page.tsx` | no | Ingestion status: recent fetch runs (revalidates 5min) |
 | `/privacy`, `/terms` | `src/app/privacy/page.tsx`, `terms/page.tsx` | no | Legal |
 | `/api/auth/[...all]` | `src/app/api/auth/[...all]/route.ts` | — | Better Auth handler |
 | `/api/releases` | `src/app/api/releases/route.ts` | optional | Paginated feed JSON |
