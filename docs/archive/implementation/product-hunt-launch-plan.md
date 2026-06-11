@@ -1,12 +1,12 @@
 # Product Hunt launch plan
 
-**Status:** current (Phases 0–1 shipped)
+**Status:** shipped (all phases, 2026-06-11)
 **Created:** 2026-06-11
 **Goal:** Make StackPulse powerful and trustworthy enough for a Product Hunt launch.
 
-> **Progress 2026-06-11:** Phase 0 (all of 0.1–0.6) and Phase 1 (all of 1.1–1.5) shipped.
-> Remaining: Phase 2 growth loops, plus deploy steps — run `pnpm db:migrate` (migration 0007)
-> and `pnpm db:seed` (90-stack registry) against production, set `RESEND_API_KEY`,
+> **Shipped 2026-06-11:** Phase 0 (0.1–0.6), Phase 1 (1.1–1.5), and Phase 2 (2.1–2.5) are all
+> implemented. Remaining work is deployment, not code: run `pnpm db:migrate` (migrations 0007 +
+> 0008) and `pnpm db:seed` (90-stack registry) against production; set `RESEND_API_KEY`,
 > `DIGEST_FROM_EMAIL`, `GITHUB_TOKEN`, and optionally `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN`.
 
 ---
