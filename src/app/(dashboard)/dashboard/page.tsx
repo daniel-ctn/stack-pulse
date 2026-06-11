@@ -154,6 +154,10 @@ function DashHeader({ email }: { email: string | null }) {
                 edit stack
               </Link>
               <span className="text-mute">·</span>
+              <Link href="/settings" className="text-dust hover:text-lime transition-colors">
+                settings
+              </Link>
+              <span className="text-mute">·</span>
               <UserMenu email={email} />
             </>
           ) : (

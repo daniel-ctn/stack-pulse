@@ -57,6 +57,13 @@
       "when": 1781132878228,
       "tag": "0007_colossal_shadow_king",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781136498562,
+      "tag": "0008_wonderful_bushwacker",
+      "breakpoints": true
     }
   ]
 }

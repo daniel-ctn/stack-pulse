@@ -140,6 +140,22 @@ export const digestSubscribers = pgTable(
   ],
 )
 
+export const userWebhooks = pgTable(
+  'user_webhooks',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(), // 'slack' | 'discord'
+    url: text('url').notNull(),
+    minImportance: importanceLevel('min_importance').notNull().default('high'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => [unique('user_webhooks_user_unique').on(t.userId)],
+)
+
 // BetterAuth tables
 export const accounts = pgTable('accounts', {
   id: text('id').primaryKey(),

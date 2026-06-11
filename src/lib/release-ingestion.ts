@@ -18,16 +18,22 @@ export function isPublishable(release: GithubRelease): boolean {
   return !release.draft && !!release.published_at && !!release.tag_name
 }
 
-export async function processTechReleases(tech: Tech): Promise<ReleaseFetchRunDetail> {
+export type ProcessTechResult = {
+  detail: ReleaseFetchRunDetail
+  insertedReleaseIds: string[]
+}
+
+export async function processTechReleases(tech: Tech): Promise<ProcessTechResult> {
   let inserted = 0
   let errors = 0
+  const insertedReleaseIds: string[] = []
 
   let releases: GithubRelease[]
   try {
     releases = await fetchLatestReleases(tech.githubRepoUrl, RELEASES_PER_TECH)
   } catch (err) {
     console.error(`fetch failed for ${tech.name}:`, err)
-    return { tech: tech.name, inserted, errors: 1 }
+    return { detail: { tech: tech.name, inserted, errors: 1 }, insertedReleaseIds }
   }
 
   for (const release of releases) {
@@ -84,14 +90,17 @@ export async function processTechReleases(tech: Tech): Promise<ReleaseFetchRunDe
         })
         .returning({ id: releaseUpdates.id })
 
-      if (result.length > 0) inserted++
+      if (result.length > 0) {
+        inserted++
+        insertedReleaseIds.push(result[0].id)
+      }
     } catch (err) {
       errors++
       console.error(`insert failed for ${tech.name}@${release.tag_name}:`, err)
     }
   }
 
-  return { tech: tech.name, inserted, errors }
+  return { detail: { tech: tech.name, inserted, errors }, insertedReleaseIds }
 }
 
 export type FetchRunRow = {

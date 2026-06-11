@@ -7,6 +7,7 @@ import {
   processTechReleases,
 } from '@/lib/release-ingestion'
 import { requireCronAuth } from '@/lib/cron-auth'
+import { dispatchReleaseWebhooks } from '@/lib/webhooks'
 
 export const maxDuration = 300
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
   )
 
   const results: { tech: string; inserted: number; errors: number }[] = []
+  const insertedReleaseIds: string[] = []
   const runId = await createReleaseFetchRun('cron')
   const startedAt = Date.now()
 
@@ -47,7 +49,8 @@ export async function GET(request: NextRequest) {
     const settled = await Promise.allSettled(chunk.map(processTechReleases))
     for (const r of settled) {
       if (r.status === 'fulfilled') {
-        results.push(r.value)
+        results.push(r.value.detail)
+        insertedReleaseIds.push(...r.value.insertedReleaseIds)
       } else {
         console.error('processTech rejected:', r.reason)
       }
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
   }
 
   const summary = await finishReleaseFetchRun({ runId, details: results })
+  const webhooks = await dispatchReleaseWebhooks(insertedReleaseIds)
 
-  return NextResponse.json({ success: true, runId, ...summary, results })
+  return NextResponse.json({ success: true, runId, ...summary, webhooks, results })
 }

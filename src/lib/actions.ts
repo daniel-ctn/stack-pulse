@@ -7,6 +7,7 @@ import {
   technologies,
   userReadReleases,
   userTechPreferences,
+  userWebhooks,
   users,
 } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
@@ -27,6 +28,7 @@ import {
   resolveDependencies,
   type StackImportResult,
 } from '@/lib/stack-import'
+import { buildTestPayload, parseWebhookUrl, postWebhook, type WebhookKind } from '@/lib/webhooks'
 
 type ActionResult<T = undefined> = T extends undefined
   ? { ok: true } | { ok: false; error: string }
@@ -383,7 +385,7 @@ export async function addCustomTech(
       .limit(1)
 
     const runId = await createReleaseFetchRun('custom_repo')
-    const detail = await processTechReleases(tech)
+    const { detail } = await processTechReleases(tech)
     await finishReleaseFetchRun({ runId, details: [detail] })
 
     return {
@@ -449,6 +451,114 @@ export async function scanPackageJson(
   } catch (err) {
     console.error('scanPackageJson failed:', err)
     return { ok: false, error: 'could not scan dependencies' }
+  }
+}
+
+const WEBHOOK_KINDS = ['slack', 'discord'] as const
+const IMPORTANCE_LEVELS = ['low', 'medium', 'high', 'critical'] as const
+const MAX_WEBHOOK_TESTS_PER_WINDOW = 5
+const WEBHOOK_TEST_WINDOW_MS = 60 * 60 * 1000
+const webhookTestAttempts = new Map<string, { count: number; resetAt: number }>()
+
+export async function saveWebhookSettings({
+  kind,
+  url,
+  minImportance,
+}: {
+  kind: string
+  url: string
+  minImportance: string
+}): Promise<ActionResult> {
+  const userId = await requireUserId()
+  if (!userId) return { ok: false, error: 'not signed in' }
+
+  if (!WEBHOOK_KINDS.includes(kind as WebhookKind)) {
+    return { ok: false, error: 'pick slack or discord' }
+  }
+  if (!IMPORTANCE_LEVELS.includes(minImportance as (typeof IMPORTANCE_LEVELS)[number])) {
+    return { ok: false, error: 'invalid importance level' }
+  }
+
+  const normalizedUrl = parseWebhookUrl(kind as WebhookKind, url)
+  if (!normalizedUrl) {
+    return {
+      ok: false,
+      error:
+        kind === 'slack'
+          ? 'enter a valid slack webhook url (hooks.slack.com/services/…)'
+          : 'enter a valid discord webhook url (discord.com/api/webhooks/…)',
+    }
+  }
+
+  try {
+    await getDb()
+      .insert(userWebhooks)
+      .values({
+        userId,
+        kind,
+        url: normalizedUrl,
+        minImportance: minImportance as (typeof IMPORTANCE_LEVELS)[number],
+      })
+      .onConflictDoUpdate({
+        target: userWebhooks.userId,
+        set: {
+          kind,
+          url: normalizedUrl,
+          minImportance: minImportance as (typeof IMPORTANCE_LEVELS)[number],
+          updatedAt: new Date(),
+        },
+      })
+
+    revalidatePath('/settings')
+    return { ok: true }
+  } catch (err) {
+    console.error('saveWebhookSettings failed:', err)
+    return { ok: false, error: 'could not save webhook' }
+  }
+}
+
+export async function deleteWebhookSettings(): Promise<ActionResult> {
+  const userId = await requireUserId()
+  if (!userId) return { ok: false, error: 'not signed in' }
+
+  try {
+    await getDb().delete(userWebhooks).where(eq(userWebhooks.userId, userId))
+    revalidatePath('/settings')
+    return { ok: true }
+  } catch (err) {
+    console.error('deleteWebhookSettings failed:', err)
+    return { ok: false, error: 'could not remove webhook' }
+  }
+}
+
+export async function testWebhookSettings(): Promise<ActionResult> {
+  const userId = await requireUserId()
+  if (!userId) return { ok: false, error: 'not signed in' }
+
+  const now = Date.now()
+  const attempts = webhookTestAttempts.get(userId)
+  if (attempts && attempts.resetAt > now && attempts.count >= MAX_WEBHOOK_TESTS_PER_WINDOW) {
+    return { ok: false, error: 'too many test sends; try again later' }
+  }
+  webhookTestAttempts.set(userId, {
+    count: attempts && attempts.resetAt > now ? attempts.count + 1 : 1,
+    resetAt: attempts && attempts.resetAt > now ? attempts.resetAt : now + WEBHOOK_TEST_WINDOW_MS,
+  })
+
+  try {
+    const [webhook] = await getDb()
+      .select({ kind: userWebhooks.kind, url: userWebhooks.url })
+      .from(userWebhooks)
+      .where(eq(userWebhooks.userId, userId))
+      .limit(1)
+
+    if (!webhook) return { ok: false, error: 'save a webhook first' }
+
+    await postWebhook(webhook.kind as WebhookKind, webhook.url, buildTestPayload(webhook.kind as WebhookKind))
+    return { ok: true }
+  } catch (err) {
+    console.error('testWebhookSettings failed:', err)
+    return { ok: false, error: 'test send failed — check the webhook url' }
   }
 }
 

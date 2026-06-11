@@ -13,6 +13,7 @@ App Router route groups — see [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) for UI t
 | `/sign-up` | `src/app/(auth)/sign-up/page.tsx` | no | Redirects → `/sign-in` |
 | `/onboarding` | `src/app/(dashboard)/onboarding/page.tsx` | yes | Stack selection |
 | `/dashboard` | `src/app/(dashboard)/dashboard/page.tsx` | optional | Release feed (redirects to onboarding if signed in with no stacks) |
+| `/settings` | `src/app/(dashboard)/settings/page.tsx` | yes | Slack/Discord webhook notification settings |
 | `/stacks` | `src/app/stacks/page.tsx` | no | Public stack index |
 | `/stacks/[slug]` | `src/app/stacks/[slug]/page.tsx` | no | Public stack release page |
 | `/stacks/[slug]/rss.xml` | `src/app/stacks/[slug]/rss.xml/route.ts` | no | RSS 2.0 feed per stack (CDN-cached 1h) |
