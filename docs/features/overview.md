@@ -22,6 +22,7 @@ App Router route groups — see [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) for UI t
 | `/api/auth/[...all]` | `src/app/api/auth/[...all]/route.ts` | — | Better Auth handler |
 | `/api/releases` | `src/app/api/releases/route.ts` | optional | Paginated feed JSON |
 | `/api/release-advice` | `src/app/api/release-advice/route.ts` | yes | AI upgrade advice |
+| `/api/mcp/[transport]` | `src/app/api/mcp/[transport]/route.ts` | no (rate-limited) | MCP server — see [mcp-server.md](./mcp-server.md) |
 | `/api/cron/fetch-releases` | `src/app/api/cron/fetch-releases/route.ts` | `CRON_SECRET` | Scheduled ingestion |
 | `/api/cron/send-digest` | `src/app/api/cron/send-digest/route.ts` | `CRON_SECRET` | Weekly digest emails |
 | `/api/digest/unsubscribe` | `src/app/api/digest/unsubscribe/route.ts` | token | One-click unsubscribe (POST) |

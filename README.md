@@ -17,6 +17,11 @@ StackPulse is a non-profit, open-source service for developers. It watches a lis
 - **Read/unread workflow** with stack, importance, status, and text filters.
 - **Weekly email digest** via Resend — stack-scoped or cross-stack, with one-click unsubscribe.
 - **Public status page** (`/status`) with fetch run history for ingestion health.
+- **MCP server** — ask Claude Code, Claude Desktop, or Cursor what's new in your stack:
+  ```bash
+  claude mcp add --transport http stackpulse https://<your-domain>/api/mcp/mcp
+  ```
+  Tools: `list_stacks`, `get_releases`, `get_upgrade_plan`, `search_releases`.
 - **Self-hostable** on Vercel + Neon free tier.
 
 ## Tech stack

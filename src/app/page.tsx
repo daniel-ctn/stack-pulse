@@ -91,6 +91,11 @@ const faqItems = [
     answer:
       'The registry covers 90+ stacks — React, Next.js, Tailwind, Drizzle, Astro, Bun, Svelte, Vue, and more — and you can add any public GitHub repository on top.',
   },
+  {
+    question: 'Can my AI coding assistant use StackPulse?',
+    answer:
+      'Yes. StackPulse ships an MCP server, so Claude Code, Claude Desktop, Cursor, and other MCP clients can list stacks, read AI-distilled releases, search changelogs, and build upgrade plans directly from your editor.',
+  },
 ]
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
